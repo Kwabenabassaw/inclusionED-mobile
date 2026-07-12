@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:string_similarity/string_similarity.dart';
 import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
 import 'package:inclusive_ed_student/shared/models/quiz.dart';
 import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
@@ -9,24 +11,133 @@ import 'package:inclusive_ed_student/shared/models/enrollment.dart';
 import 'package:inclusive_ed_student/features/modules/presentation/quiz_results_screen.dart';
 import 'package:inclusive_ed_student/features/accessibility/unified_tts_controller.dart';
 
+// ─── Riverpod State Management for Voice ──────────────────────────────────────
+
+class QuizVoiceState {
+  final bool isListening;
+  final String lastWords;
+  final bool isSpeechEnabled;
+  final String? errorMessage;
+
+  QuizVoiceState({
+    this.isListening = false,
+    this.lastWords = '',
+    this.isSpeechEnabled = false,
+    this.errorMessage,
+  });
+
+  QuizVoiceState copyWith({
+    bool? isListening,
+    String? lastWords,
+    bool? isSpeechEnabled,
+    String? errorMessage,
+  }) {
+    return QuizVoiceState(
+      isListening: isListening ?? this.isListening,
+      lastWords: lastWords ?? this.lastWords,
+      isSpeechEnabled: isSpeechEnabled ?? this.isSpeechEnabled,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
+}
+
+class QuizVoiceController extends Notifier<QuizVoiceState> {
+  final SpeechToText _speechToText = SpeechToText();
+
+  @override
+  QuizVoiceState build() {
+    _initSpeech();
+    return QuizVoiceState();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final enabled = await _speechToText.initialize(
+        onError: (val) {
+          state = state.copyWith(
+            isListening: false,
+            errorMessage: val.errorMsg,
+          );
+        },
+        onStatus: (val) {
+          if (val == 'notListening' || val == 'done') {
+            state = state.copyWith(isListening: false);
+          }
+        },
+      );
+      state = state.copyWith(isSpeechEnabled: enabled);
+    } catch (e) {
+      state = state.copyWith(
+          isSpeechEnabled: false, errorMessage: e.toString());
+    }
+  }
+
+  Future<void> startListening({required Function(String) onResult}) async {
+    if (!state.isSpeechEnabled) {
+      state = state.copyWith(errorMessage: 'Speech to text is not enabled.');
+      return;
+    }
+    state = state.copyWith(isListening: true, lastWords: '', errorMessage: null);
+    HapticFeedback.heavyImpact();
+
+    try {
+      await _speechToText.listen(
+        onResult: (result) {
+          state = state.copyWith(lastWords: result.recognizedWords);
+          if (result.finalResult && result.recognizedWords.isNotEmpty) {
+            onResult(result.recognizedWords);
+            stopListening();
+          }
+        },
+        listenOptions: SpeechListenOptions(
+          listenFor: const Duration(seconds: 10),
+          pauseFor: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      state = state.copyWith(isListening: false, errorMessage: e.toString());
+    }
+  }
+
+  Future<void> stopListening() async {
+    await _speechToText.stop();
+    state = state.copyWith(isListening: false);
+    HapticFeedback.mediumImpact();
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
+  }
+}
+
+final quizVoiceControllerProvider =
+    NotifierProvider<QuizVoiceController, QuizVoiceState>(() {
+  return QuizVoiceController();
+});
+
+// ─── Quiz Screen ──────────────────────────────────────────────────────────────
+
 class QuizScreen extends ConsumerStatefulWidget {
   final String courseId;
   final Quiz quiz;
   final bool embedded;
-  
-  const QuizScreen({super.key, required this.courseId, required this.quiz, this.embedded = false});
+
+  const QuizScreen({
+    super.key,
+    required this.courseId,
+    required this.quiz,
+    this.embedded = false,
+  });
 
   @override
   ConsumerState<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends ConsumerState<QuizScreen> {
+class _QuizScreenState extends ConsumerState<QuizScreen>
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentQuestionIndex = 0;
-  final SpeechToText _speechToText = SpeechToText();
-  bool _speechEnabled = false;
-  String _lastWords = '';
-  
+
   Map<int, String> _selectedAnswers = {};
   bool _isSubmitting = false;
 
@@ -37,12 +148,24 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   final UnifiedTtsController _ttsController = UnifiedTtsController();
   double _fontScaleMultiplier = 1.0;
 
+  // Mic pulse animation
+  late AnimationController _pulseAnimController;
+  late Animation<double> _pulseAnim;
+
   @override
   void initState() {
     super.initState();
-    _initSpeech();
     _ttsController.initialize();
-    
+
+    _pulseAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.25).animate(
+      CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
+    );
+
     if (widget.quiz.timeLimit > 0) {
       _timeRemainingSeconds = widget.quiz.timeLimit * 60;
       _startTimer();
@@ -52,9 +175,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeRemainingSeconds > 0) {
-        setState(() {
-          _timeRemainingSeconds--;
-        });
+        setState(() => _timeRemainingSeconds--);
+        if (_timeRemainingSeconds == 60) {
+          _ttsController.speak('One minute remaining.');
+        } else if (_timeRemainingSeconds == 10) {
+          _ttsController.speak('Ten seconds left.');
+        }
       } else {
         _timer?.cancel();
         _submitQuiz(autoSubmit: true);
@@ -67,227 +193,212 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     _pageController.dispose();
     _timer?.cancel();
     _ttsController.dispose();
+    _pulseAnimController.dispose();
     super.dispose();
   }
 
-  void _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize();
-    setState(() {});
-  }
+  // ─── Voice Input Handling ───────────────────────────────────────────────────
 
-  void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
-    setState(() {});
-  }
-
-  void _stopListening() async {
-    await _speechToText.stop();
-    setState(() {});
-  }
-
-  void _onSpeechResult(result) {
-    setState(() {
-      _lastWords = result.recognizedWords;
-    });
-    
-    if (result.finalResult) {
-      _matchVoiceToInput(_lastWords);
-    }
-  }
-  
-  void _matchVoiceToInput(String voiceText) {
+  void _handleVoiceInput(String voiceText) {
     if (voiceText.isEmpty) return;
-    
+
+    final lower = voiceText.toLowerCase().trim();
+
+    // 1. Check for navigation commands
+    if (_isNextCommand(lower)) {
+      _voiceNextQuestion();
+      return;
+    }
+    if (_isPreviousCommand(lower)) {
+      _voicePreviousQuestion();
+      return;
+    }
+    if (_isSubmitCommand(lower)) {
+      _submitQuiz();
+      return;
+    }
+    if (_isChangeCommand(lower)) {
+      setState(() => _selectedAnswers.remove(_currentQuestionIndex));
+      _ttsController.speak('Answer cleared. Tap the mic to answer again.');
+      return;
+    }
+
+    // 2. Try to match as an answer to the current question
+    _matchVoiceToAnswer(voiceText);
+  }
+
+  bool _isNextCommand(String lower) =>
+      lower.contains('next') ||
+      lower == 'continue' ||
+      lower == 'proceed' ||
+      lower == 'move on';
+
+  bool _isPreviousCommand(String lower) =>
+      lower.contains('previous') ||
+      lower.contains('go back') ||
+      lower == 'back';
+
+  bool _isSubmitCommand(String lower) =>
+      lower.contains('submit') ||
+      lower.contains('finish') ||
+      lower.contains('done');
+
+  bool _isChangeCommand(String lower) =>
+      lower.contains('change') ||
+      lower.contains('re-answer') ||
+      lower.contains('reanswer') ||
+      lower == 'clear' ||
+      lower == 'redo';
+
+  void _voiceNextQuestion() {
+    final hasAnswer =
+        _selectedAnswers[_currentQuestionIndex]?.isNotEmpty == true;
+    if (!hasAnswer) {
+      _ttsController.speak('Please select an answer first.');
+      return;
+    }
+    _nextQuestion();
+  }
+
+  void _voicePreviousQuestion() {
+    _previousQuestion();
+  }
+
+  void _matchVoiceToAnswer(String voiceText) {
     final question = widget.quiz.questions[_currentQuestionIndex];
     final type = question.type.toUpperCase().replaceAll('-', '_');
-    
-    if (type == 'MULTIPLE_CHOICE' || type == 'TRUE_FALSE') {
-      final options = type == 'TRUE_FALSE' ? ['True', 'False'] : (question.options ?? []);
-      final lowerVoiceText = voiceText.toLowerCase();
-      
-      for (int i = 0; i < options.length; i++) {
-        if (lowerVoiceText.contains(options[i].toLowerCase()) || 
-            lowerVoiceText.contains('option ${i + 1}') ||
-            lowerVoiceText.contains(String.fromCharCode(97 + i))) {
-          setState(() {
-            _selectedAnswers[_currentQuestionIndex] = options[i];
-          });
-          break;
-        }
+    final lower = voiceText.toLowerCase().trim();
+
+    if (type == 'MULTIPLE_CHOICE') {
+      final options = question.options ?? [];
+      String? matched = _matchMultipleChoice(lower, options);
+
+      if (matched != null) {
+        setState(() => _selectedAnswers[_currentQuestionIndex] = matched);
+        _announceSelection(matched);
+      } else {
+        _ttsController.speak(
+          "I didn't catch that. Please tap the mic and say a letter like A, B, C, or repeat the option.",
+        );
+      }
+    } else if (type == 'TRUE_FALSE') {
+      String? matched;
+      if (lower.contains('true') || lower == 'yes') {
+        matched = 'True';
+      } else if (lower.contains('false') || lower == 'no') {
+        matched = 'False';
+      }
+
+      if (matched != null) {
+        final finalMatch = matched;
+        setState(() => _selectedAnswers[_currentQuestionIndex] = finalMatch);
+        _announceSelection(finalMatch);
+      } else {
+        _ttsController.speak('Please tap the mic and say true or false.');
       }
     } else {
-      // For short-answer and FILL_BLANK, just input the text
-      setState(() {
-        _selectedAnswers[_currentQuestionIndex] = voiceText;
-      });
+      // short-answer / fill-blank: just transcribe
+      setState(() => _selectedAnswers[_currentQuestionIndex] = voiceText);
+      _ttsController.speak('Recorded: $voiceText.');
     }
   }
 
-  void _playAudio(QuizQuestion question) {
-    if (_ttsController.isPlaying) {
+  String? _matchMultipleChoice(String lower, List<String> options) {
+    if (options.isEmpty) return null;
+    
+    // Single letter match
+    final maxLetter = String.fromCharCode('a'.codeUnitAt(0) + options.length - 1);
+    final singleLetter = RegExp('^[a-$maxLetter]\$');
+    if (singleLetter.hasMatch(lower)) {
+      final idx = lower.codeUnitAt(0) - 'a'.codeUnitAt(0);
+      if (idx < options.length) return options[idx];
+    }
+
+    // Ordinal match
+    final ordinalMap = {
+      'first': 0, 'one': 0, '1': 0,
+      'second': 1, 'two': 1, '2': 1,
+      'third': 2, 'three': 2, '3': 2,
+      'fourth': 3, 'four': 3, '4': 3,
+    };
+    for (final entry in ordinalMap.entries) {
+      if (lower.contains(entry.key) && entry.value < options.length) {
+        return options[entry.value];
+      }
+    }
+
+    // "Option A" match
+    final letterPattern = RegExp(r'\b(option|letter|choice)\s+([a-d])\b');
+    final letterMatch = letterPattern.firstMatch(lower);
+    if (letterMatch != null) {
+      final idx = letterMatch.group(2)!.codeUnitAt(0) - 'a'.codeUnitAt(0);
+      if (idx < options.length) return options[idx];
+    }
+
+    // Fuzzy text match
+    double bestScore = 0.4;
+    String? bestMatch;
+    for (final option in options) {
+      final score = option.toLowerCase().similarityTo(lower);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = option;
+      }
+    }
+    if (bestMatch != null) return bestMatch;
+
+    // Partial substring match
+    for (final option in options) {
+      if (lower.contains(option.toLowerCase().substring(
+            0,
+            (option.length * 0.4).ceil().clamp(3, option.length),
+          ))) {
+        return option;
+      }
+    }
+
+    return null;
+  }
+
+  void _announceSelection(String selectedOption) {
+    final isLast = _currentQuestionIndex == widget.quiz.questions.length - 1;
+    final confirmText = isLast
+        ? 'Great! You selected $selectedOption. Tap mic and say submit to finish.'
+        : 'Great! You selected $selectedOption. Tap mic and say next to continue.';
+
+    _ttsController.speak(confirmText);
+  }
+
+  // ─── Play button ────────────────────────────────────────────────────────────
+
+  void _playQuestionAudio(QuizQuestion question, {bool forcePlay = false}) {
+    if (_ttsController.isPlaying && !forcePlay) {
       _ttsController.stop();
     } else {
-      // Use the pre-generated SSML readout if available, else fallback to basic read
-      final textToRead = question.ttsReadout ?? _buildFallbackTtsText(question);
-      _ttsController.speak(textToRead);
+      if (_ttsController.isPlaying) _ttsController.stop();
+      final buffer = StringBuffer();
+      
+      buffer.write('Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}. ');
+      buffer.write(question.ttsReadout ?? question.text);
+
+      final type = question.type.toUpperCase().replaceAll('-', '_');
+      if (type == 'MULTIPLE_CHOICE' && question.options != null) {
+        buffer.write(' Your options are: ');
+        for (int i = 0; i < question.options!.length; i++) {
+          final letter = String.fromCharCode(65 + i);
+          buffer.write('Option $letter: ${question.options![i]}. ');
+        }
+      } else if (type == 'TRUE_FALSE') {
+        buffer.write(' Is this true or false?');
+      }
+      
+      buffer.write(' Tap the microphone button at the bottom to answer.');
+      _ttsController.speak(buffer.toString());
     }
-    // Update UI state so the play button can switch to stop icon
     setState(() {});
   }
 
-  String _buildFallbackTtsText(QuizQuestion question) {
-    final buffer = StringBuffer();
-    buffer.writeln(question.text);
-    if (question.options != null && question.options!.isNotEmpty) {
-      buffer.writeln(" Options are: ");
-      for (int i = 0; i < question.options!.length; i++) {
-        buffer.writeln("Option ${String.fromCharCode(65 + i)}: ${question.options![i]}. ");
-      }
-    }
-    return buffer.toString();
-  }
-
-  void _showAccessibilitySettings() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLg)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(AppDimensions.stackLg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Accessibility Settings',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: AppDimensions.stackLg),
-                  Row(
-                    children: [
-                      const Icon(Icons.text_format),
-                      const SizedBox(width: AppDimensions.stackMd),
-                      const Text('Text Size'),
-                      Expanded(
-                        child: Slider(
-                          value: _fontScaleMultiplier,
-                          min: 1.0,
-                          max: 2.5,
-                          divisions: 6,
-                          label: '${_fontScaleMultiplier.toStringAsFixed(1)}x',
-                          onChanged: (val) {
-                            setModalState(() {
-                              _fontScaleMultiplier = val;
-                            });
-                            setState(() {
-                              _fontScaleMultiplier = val;
-                            });
-                          },
-                        ),
-                      ),
-                      Text('${_fontScaleMultiplier.toStringAsFixed(1)}x', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.stackLg),
-                ],
-              ),
-            );
-          }
-        );
-      },
-    );
-  }
-
-  Future<void> _submitQuiz({bool autoSubmit = false}) async {
-    if (_isSubmitting) return;
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    _timer?.cancel();
-
-    try {
-      final enrollmentStream = ref.read(activeEnrollmentStreamProvider(widget.courseId).future);
-      final enrollment = await enrollmentStream;
-
-      if (enrollment != null) {
-        final progress = enrollment.progress ?? const EnrollmentProgress();
-        final updatedQuizIds = Set<String>.from(progress.completedQuizIds);
-        updatedQuizIds.add(widget.quiz.id);
-
-        await ref.read(courseRepositoryProvider).updateEnrollmentProgress(
-          enrollment.id, 
-          progress.copyWith(completedQuizIds: updatedQuizIds.toList()),
-        );
-
-        // Calculate score and submit
-        int score = 0;
-        final answersMap = <String, String>{};
-        for (int i = 0; i < widget.quiz.questions.length; i++) {
-          final q = widget.quiz.questions[i];
-          final answer = _selectedAnswers[i] ?? '';
-          answersMap[i.toString()] = answer;
-          if (answer.toLowerCase().trim() == q.correctAnswer.toLowerCase().trim()) {
-            score += q.points;
-          }
-        }
-
-        final timeSpentSeconds = widget.quiz.timeLimit > 0 ? (widget.quiz.timeLimit * 60) - _timeRemainingSeconds : 0;
-
-        await ref.read(courseRepositoryProvider).submitQuiz({
-          'quizId': widget.quiz.id,
-          'studentId': enrollment.studentId,
-          'score': score,
-          'answers': answersMap,
-          'completedAt': DateTime.now().toIso8601String(),
-          'timeSpentSeconds': timeSpentSeconds,
-        });
-      }
-
-      if (!mounted) return;
-      
-      if (autoSubmit) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Time is up! Quiz submitted automatically.')),
-        );
-      }
-
-      if (widget.embedded) {
-        // If embedded, we still go to results, but maybe wait 
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => QuizResultsScreen(
-              courseId: widget.courseId,
-              quiz: widget.quiz,
-              studentAnswers: _selectedAnswers,
-            ),
-          ),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => QuizResultsScreen(
-              courseId: widget.courseId,
-              quiz: widget.quiz,
-              studentAnswers: _selectedAnswers,
-            ),
-          ),
-        );
-      }
-      
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error submitting quiz: $e')),
-      );
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
-  }
+  // ─── Navigation & Submit ────────────────────────────────────────────────────
 
   void _nextQuestion() {
     if (_currentQuestionIndex < widget.quiz.questions.length - 1) {
@@ -309,11 +420,151 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     }
   }
 
+  Future<void> _submitQuiz({bool autoSubmit = false}) async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    _timer?.cancel();
+    ref.read(quizVoiceControllerProvider.notifier).stopListening();
+
+    try {
+      final enrollmentStream =
+          ref.read(activeEnrollmentStreamProvider(widget.courseId).future);
+      final enrollment = await enrollmentStream;
+
+      if (enrollment != null) {
+        final progress = enrollment.progress ?? const EnrollmentProgress();
+        final updatedQuizIds = Set<String>.from(progress.completedQuizIds);
+        updatedQuizIds.add(widget.quiz.id);
+
+        await ref.read(courseRepositoryProvider).updateEnrollmentProgress(
+              enrollment.id,
+              progress.copyWith(completedQuizIds: updatedQuizIds.toList()),
+            );
+
+        int score = 0;
+        final answersMap = <String, String>{};
+        for (int i = 0; i < widget.quiz.questions.length; i++) {
+          final q = widget.quiz.questions[i];
+          final answer = _selectedAnswers[i] ?? '';
+          answersMap[i.toString()] = answer;
+          if (answer.toLowerCase().trim() ==
+              q.correctAnswer.toLowerCase().trim()) {
+            score += q.points;
+          }
+        }
+
+        final timeSpentSeconds = widget.quiz.timeLimit > 0
+            ? (widget.quiz.timeLimit * 60) - _timeRemainingSeconds
+            : 0;
+
+        await ref.read(courseRepositoryProvider).submitQuiz({
+          'quizId': widget.quiz.id,
+          'studentId': enrollment.studentId,
+          'score': score,
+          'answers': answersMap,
+          'completedAt': DateTime.now().toIso8601String(),
+          'timeSpentSeconds': timeSpentSeconds,
+        });
+      }
+
+      if (!mounted) return;
+
+      if (autoSubmit) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Time is up! Quiz submitted automatically.')),
+        );
+      }
+
+      final resultsScreen = QuizResultsScreen(
+        courseId: widget.courseId,
+        quiz: widget.quiz,
+        studentAnswers: _selectedAnswers,
+      );
+
+      if (widget.embedded) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => resultsScreen),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => resultsScreen),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error submitting quiz: $e')),
+      );
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  // ─── Accessibility Settings ─────────────────────────────────────────────────
+
+  void _showAccessibilitySettings() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLg)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(AppDimensions.stackLg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Accessibility Settings',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: AppDimensions.stackLg),
+                  Row(
+                    children: [
+                      const Icon(Icons.text_format),
+                      const SizedBox(width: AppDimensions.stackMd),
+                      const Text('Text Size'),
+                      Expanded(
+                        child: Slider(
+                          value: _fontScaleMultiplier,
+                          min: 1.0,
+                          max: 2.5,
+                          divisions: 6,
+                          label: '${_fontScaleMultiplier.toStringAsFixed(1)}x',
+                          onChanged: (val) {
+                            setModalState(() => _fontScaleMultiplier = val);
+                            setState(() => _fontScaleMultiplier = val);
+                          },
+                        ),
+                      ),
+                      Text('${_fontScaleMultiplier.toStringAsFixed(1)}x',
+                          style:
+                              const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.stackLg),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   String get _formattedTime {
     final minutes = (_timeRemainingSeconds / 60).floor();
     final seconds = _timeRemainingSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
+
+  // ─── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -324,70 +575,157 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       );
     }
 
+    // Watch voice state to display errors via SnackBar if any
+    ref.listen<QuizVoiceState>(quizVoiceControllerProvider, (prev, next) {
+      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Speech Error: ${next.errorMessage}')),
+        );
+        ref.read(quizVoiceControllerProvider.notifier).clearError();
+      }
+    });
+
     return Scaffold(
-      appBar: widget.embedded ? null : AppBar(
-        title: Text(widget.quiz.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_accessibility),
-            tooltip: 'Accessibility Settings',
-            onPressed: _showAccessibilitySettings,
-          ),
-          if (widget.quiz.timeLimit > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.stackMd),
-              child: Center(
-                child: Text(
-                  _formattedTime,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: _timeRemainingSeconds < 60 ? Colors.red : null,
-                  ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text(widget.quiz.title),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_accessibility),
+                  tooltip: 'Accessibility Settings',
+                  onPressed: _showAccessibilitySettings,
                 ),
-              ),
+                if (widget.quiz.timeLimit > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.stackMd),
+                    child: Center(
+                      child: Text(
+                        _formattedTime,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              _timeRemainingSeconds < 60 ? Colors.red : null,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          IconButton(
-            icon: Icon(
-              _speechToText.isNotListening ? Icons.mic_off : Icons.mic,
-              color: _speechToText.isListening ? Colors.red : null,
-            ),
-            tooltip: 'Dictate answer',
-            onPressed: _speechEnabled
-                ? (_speechToText.isNotListening ? _startListening : _stopListening)
-                : null,
-          ),
-        ],
-      ),
       body: Column(
         children: [
           LinearProgressIndicator(
             value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
           ),
+          // Show what the mic is hearing at the top if listening
+          Consumer(
+            builder: (context, ref, child) {
+              final voiceState = ref.watch(quizVoiceControllerProvider);
+              if (!voiceState.isListening && voiceState.lastWords.isEmpty) return const SizedBox.shrink();
+              
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                child: Text(
+                  voiceState.isListening 
+                      ? (voiceState.lastWords.isEmpty ? 'Listening...' : voiceState.lastWords)
+                      : 'Heard: "${voiceState.lastWords}"',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            },
+          ),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Enforce button navigation
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
-                setState(() {
-                  _currentQuestionIndex = index;
-                  _lastWords = '';
-                });
+                setState(() => _currentQuestionIndex = index);
+                _playQuestionAudio(widget.quiz.questions[index], forcePlay: true);
               },
               itemCount: widget.quiz.questions.length,
               itemBuilder: (context, index) {
-                return _buildQuestionPage(widget.quiz.questions[index], index);
+                return _buildQuestionPage(
+                    widget.quiz.questions[index], index);
               },
             ),
           ),
           _buildNavigationFooter(),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: _buildCenterMicButton(),
+    );
+  }
+
+  Widget _buildCenterMicButton() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final voiceState = ref.watch(quizVoiceControllerProvider);
+        final isListening = voiceState.isListening;
+        
+        if (isListening) {
+          _pulseAnimController.repeat(reverse: true);
+        } else {
+          _pulseAnimController.stop();
+          _pulseAnimController.reset();
+        }
+        
+        return AnimatedBuilder(
+          animation: _pulseAnim,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: isListening ? _pulseAnim.value : 1.0,
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    // Stop any reading TTS so the mic isn't confused
+                    if (_ttsController.isPlaying) {
+                      _ttsController.stop();
+                    }
+                    if (isListening) {
+                      ref.read(quizVoiceControllerProvider.notifier).stopListening();
+                    } else {
+                      ref.read(quizVoiceControllerProvider.notifier).startListening(
+                        onResult: _handleVoiceInput,
+                      );
+                    }
+                  },
+                  backgroundColor: isListening 
+                      ? Colors.red 
+                      : Theme.of(context).colorScheme.primary,
+                  elevation: isListening ? 8 : 4,
+                  shape: const CircleBorder(),
+                  child: Icon(
+                    isListening ? Icons.mic : Icons.mic_none,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   Widget _buildQuestionPage(QuizQuestion question, int index) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppDimensions.marginPage),
+      padding: const EdgeInsets.only(
+        left: AppDimensions.marginPage,
+        right: AppDimensions.marginPage,
+        top: AppDimensions.marginPage,
+        bottom: 120, // Extra padding at bottom for the FAB
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -397,15 +735,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
               Text(
                 'Question ${index + 1} of ${widget.quiz.questions.length}',
                 style: Theme.of(context).textTheme.labelLarge,
-                textScaleFactor: _fontScaleMultiplier,
+                textScaler: TextScaler.linear(_fontScaleMultiplier),
               ),
               Text(
                 'Points: ${question.points}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-                textScaleFactor: _fontScaleMultiplier,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                textScaler: TextScaler.linear(_fontScaleMultiplier),
               ),
             ],
           ),
@@ -417,40 +755,35 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 child: Text(
                   question.text,
                   style: Theme.of(context).textTheme.headlineSmall,
-                  textScaleFactor: _fontScaleMultiplier,
+                  textScaler: TextScaler.linear(_fontScaleMultiplier),
                 ),
               ),
               IconButton(
-                onPressed: () => _playAudio(question),
+                onPressed: () => _playQuestionAudio(question),
                 icon: Icon(
-                  _ttsController.isPlaying ? Icons.stop_circle : Icons.play_circle_fill,
+                  _ttsController.isPlaying
+                      ? Icons.stop_circle
+                      : Icons.play_circle_fill,
                   color: Theme.of(context).colorScheme.primary,
                   size: 36 * _fontScaleMultiplier,
                 ),
-                tooltip: _ttsController.isPlaying ? 'Stop Audio' : 'Play Question Aloud',
+                tooltip: _ttsController.isPlaying
+                    ? 'Stop Audio'
+                    : 'Read Question Aloud',
               ),
             ],
           ),
           if (question.altText != null && question.altText!.isNotEmpty) ...[
-             const SizedBox(height: AppDimensions.stackSm),
-             Text(
-               '[Image Description: ${question.altText}]',
-               style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-               textScaleFactor: _fontScaleMultiplier,
-             ),
+            const SizedBox(height: AppDimensions.stackSm),
+            Text(
+              '[Image Description: ${question.altText}]',
+              style:
+                  const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+              textScaler: TextScaler.linear(_fontScaleMultiplier),
+            ),
           ],
           const SizedBox(height: AppDimensions.stackXl),
           _buildInputForQuestionType(question, index),
-          
-          if (_speechToText.isListening) 
-            Padding(
-              padding: const EdgeInsets.only(top: AppDimensions.stackLg),
-              child: Text(
-                'Listening... $_lastWords', 
-                style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-                textScaleFactor: _fontScaleMultiplier,
-              ),
-            ),
         ],
       ),
     );
@@ -459,7 +792,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Widget _buildInputForQuestionType(QuizQuestion question, int index) {
     final answer = _selectedAnswers[index] ?? '';
     final type = question.type.toUpperCase().replaceAll('-', '_');
-    
+
     if (type == 'MULTIPLE_CHOICE') {
       final options = question.options ?? [];
       return Column(
@@ -467,32 +800,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         children: List.generate(options.length, (optIndex) {
           final optionText = options[optIndex];
           final isSelected = answer == optionText;
+          final letter = String.fromCharCode(65 + optIndex);
           return Padding(
             padding: const EdgeInsets.only(bottom: AppDimensions.stackMd),
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                backgroundColor: isSelected ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surface,
-                side: BorderSide(
-                  color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
-                  width: isSelected ? 3.0 : 1.0,
-                ),
-                alignment: Alignment.centerLeft,
-                padding: EdgeInsets.all(AppDimensions.stackMd * _fontScaleMultiplier),
-                minimumSize: const Size.fromHeight(60), // Ensure robust touch target
-              ),
-              onPressed: () {
-                setState(() {
-                  _selectedAnswers[index] = optionText;
-                });
-              },
-              child: Text(
-                '${String.fromCharCode(65 + optIndex)}. $optionText',
-                style: TextStyle(
-                  color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                textScaleFactor: _fontScaleMultiplier,
-              ),
+            child: _OptionButton(
+              letter: letter,
+              text: optionText,
+              isSelected: isSelected,
+              fontScaleMultiplier: _fontScaleMultiplier,
+              onTap: () => setState(() => _selectedAnswers[index] = optionText),
             ),
           );
         }),
@@ -506,17 +822,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         ],
       );
     } else {
-      // short-answer or FILL_BLANK
       return TextField(
         controller: TextEditingController(text: answer)
           ..selection = TextSelection.collapsed(offset: answer.length),
-        onChanged: (val) {
-          _selectedAnswers[index] = val;
-        },
+        onChanged: (val) => _selectedAnswers[index] = val,
         style: TextStyle(fontSize: 16 * _fontScaleMultiplier),
         decoration: InputDecoration(
           border: const OutlineInputBorder(borderSide: BorderSide(width: 2)),
-          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 3)),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary, width: 3),
+          ),
           hintText: 'Type your answer here...',
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -527,37 +843,46 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     }
   }
 
-  Widget _buildTrueFalseButton(int questionIndex, String currentAnswer, String value) {
+  Widget _buildTrueFalseButton(
+      int questionIndex, String currentAnswer, String value) {
     final isSelected = currentAnswer == value;
     return OutlinedButton(
       style: OutlinedButton.styleFrom(
-        backgroundColor: isSelected ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surface,
+        backgroundColor: isSelected
+            ? Theme.of(context).colorScheme.primaryContainer
+            : Theme.of(context).colorScheme.surface,
         side: BorderSide(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outline,
           width: isSelected ? 3.0 : 1.0,
         ),
         alignment: Alignment.centerLeft,
         padding: EdgeInsets.all(AppDimensions.stackMd * _fontScaleMultiplier),
         minimumSize: const Size.fromHeight(60),
       ),
-      onPressed: () {
-        setState(() => _selectedAnswers[questionIndex] = value);
-      },
+      onPressed: () => setState(() => _selectedAnswers[questionIndex] = value),
       child: Row(
         children: [
           Icon(
-            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+            isSelected
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
             size: 24 * _fontScaleMultiplier,
           ),
           SizedBox(width: 12 * _fontScaleMultiplier),
           Text(
             value,
             style: TextStyle(
-              color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-            textScaleFactor: _fontScaleMultiplier,
+            textScaler: TextScaler.linear(_fontScaleMultiplier),
           ),
         ],
       ),
@@ -565,8 +890,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   }
 
   Widget _buildNavigationFooter() {
-    final hasAnsweredCurrent = _selectedAnswers[_currentQuestionIndex]?.isNotEmpty == true;
-    final isLastQuestion = _currentQuestionIndex == widget.quiz.questions.length - 1;
+    final hasAnsweredCurrent =
+        _selectedAnswers[_currentQuestionIndex]?.isNotEmpty == true;
+    final isLastQuestion =
+        _currentQuestionIndex == widget.quiz.questions.length - 1;
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -579,13 +906,153 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             child: const Text('Previous'),
           ),
           ElevatedButton(
-            onPressed: hasAnsweredCurrent && !_isSubmitting ? _nextQuestion : null,
-            child: _isSubmitting 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            onPressed:
+                hasAnsweredCurrent && !_isSubmitting ? _nextQuestion : null,
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(isLastQuestion ? 'Submit Quiz' : 'Next'),
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Option Button Widget ──────────────────────────────────────────────────────
+
+class _OptionButton extends StatefulWidget {
+  final String letter;
+  final String text;
+  final bool isSelected;
+  final double fontScaleMultiplier;
+  final VoidCallback onTap;
+
+  const _OptionButton({
+    required this.letter,
+    required this.text,
+    required this.isSelected,
+    required this.fontScaleMultiplier,
+    required this.onTap,
+  });
+
+  @override
+  State<_OptionButton> createState() => _OptionButtonState();
+}
+
+class _OptionButtonState extends State<_OptionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _flashController;
+
+  @override
+  void initState() {
+    super.initState();
+    _flashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_OptionButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) {
+      _flashController.forward(from: 0).then((_) => _flashController.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _flashController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedBuilder(
+      animation: _flashController,
+      builder: (context, child) {
+        final flashValue = _flashController.value;
+        Color bgColor;
+        if (flashValue > 0 && widget.isSelected) {
+          bgColor = Color.lerp(
+            theme.colorScheme.primaryContainer,
+            Colors.green.shade200,
+            flashValue,
+          )!;
+        } else {
+          bgColor = widget.isSelected
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surface;
+        }
+
+        return OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            backgroundColor: bgColor,
+            side: BorderSide(
+              color: widget.isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
+              width: widget.isSelected ? 3.0 : 1.0,
+            ),
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.all(
+                AppDimensions.stackMd * widget.fontScaleMultiplier),
+            minimumSize: const Size.fromHeight(60),
+          ),
+          onPressed: widget.onTap,
+          child: Row(
+            children: [
+              Container(
+                width: 32 * widget.fontScaleMultiplier,
+                height: 32 * widget.fontScaleMultiplier,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.surfaceContainerHighest,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  widget.letter,
+                  style: TextStyle(
+                    color: widget.isSelected
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14 * widget.fontScaleMultiplier,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12 * widget.fontScaleMultiplier),
+              Expanded(
+                child: Text(
+                  widget.text,
+                  style: TextStyle(
+                    color: widget.isSelected
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurface,
+                    fontWeight: widget.isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                  textScaler: TextScaler.linear(widget.fontScaleMultiplier),
+                ),
+              ),
+              if (widget.isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: theme.colorScheme.primary,
+                  size: 20 * widget.fontScaleMultiplier,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

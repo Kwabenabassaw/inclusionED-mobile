@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audio_session/audio_session.dart';
 
 enum TtsEngineType { inbuilt }
 
@@ -45,6 +46,17 @@ class UnifiedTtsController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        usage: AndroidAudioUsage.assistanceAccessibility,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+    ));
+
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _setPlayingState(false);
@@ -91,6 +103,16 @@ class UnifiedTtsController extends ChangeNotifier {
         await _player.setVolume(_volume);
         await _player.setPitch(_pitch);
         await _player.play();
+        
+        // Wait for natural completion
+        await _player.playerStateStream.firstWhere(
+          (s) => s.processingState == ProcessingState.completed || 
+                 s.processingState == ProcessingState.idle,
+        );
+
+        // NOW release focus
+        await _player.stop(); 
+        _setPlayingState(false);
       } else {
         _setPlayingState(false);
       }
