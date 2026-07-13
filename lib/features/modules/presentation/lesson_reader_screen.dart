@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
 import '../../lessons/presentation/components/audio_toolbar.dart';
 import '../../lessons/presentation/controllers/audio_player_controller.dart';
 
@@ -44,8 +44,8 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
           }
 
           final markdownText = contents
-              .where((c) => c.contentMarkdown != null)
-              .map((c) => c.contentMarkdown)
+              .where((c) => c?.contentMarkdown != null)
+              .map((c) => c?.contentMarkdown)
               .join('\n\n');
 
           return Column(

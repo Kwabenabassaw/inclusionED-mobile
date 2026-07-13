@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:inclusive_ed_student/core/theme/app_colors.dart';
-import 'package:inclusive_ed_student/core/theme/app_typography.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/core/theme/app_colors.dart';
+import 'package:opencampus_lms/core/theme/app_typography.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 
 class AppTheme {
   static ThemeData getTheme(AccessibilitySettings settings) {
@@ -20,7 +20,7 @@ class AppTheme {
 
     return ThemeData(
       colorScheme: colorScheme,
-      textTheme: AppTypography.getTextTheme(settings.fontFamily),
+      textTheme: AppTypography.getTextTheme(settings),
       scaffoldBackgroundColor: colorScheme.surface,
       
       // Button Theme

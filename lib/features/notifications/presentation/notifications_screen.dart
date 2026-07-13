@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
-import 'package:inclusive_ed_student/features/notifications/data/notification_repository.dart';
-import 'package:inclusive_ed_student/shared/models/notification.dart' as app_model;
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/features/notifications/data/notification_repository.dart';
+import 'package:opencampus_lms/shared/models/notification.dart' as app_model;
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -139,16 +139,18 @@ class _NotificationCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
+    final isDark = theme.brightness == Brightness.dark;
+
     // Customize based on notification type
     Color statusColor;
     IconData statusIcon;
     switch (notification.type.toUpperCase()) {
       case 'GRADE':
-        statusColor = Colors.green;
+        statusColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
         statusIcon = Icons.grade_outlined;
         break;
       case 'ANNOUNCEMENT':
-        statusColor = Colors.orange;
+        statusColor = isDark ? Colors.orange.shade300 : Colors.orange.shade800;
         statusIcon = Icons.campaign_outlined;
         break;
       case 'ENROLLMENT':
@@ -198,96 +200,107 @@ class _NotificationCard extends ConsumerWidget {
                 context.go('/profile');
             }
           },
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.stackLg),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon Wrapper
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    statusIcon,
-                    color: statusColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.stackMd),
-                
-                // Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                            ),
-                            child: Text(
-                              notification.type.toUpperCase(),
-                              style: TextStyle(
-                                color: statusColor,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            timeAgo,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        notification.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: notification.read ? FontWeight.w600 : FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        notification.body,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Unread dot
-                if (!notification.read) ...[
-                  const SizedBox(width: AppDimensions.stackSm),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
+          child: MergeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.stackLg),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon Wrapper
+                  ExcludeSemantics(
                     child: Container(
-                      width: 10,
-                      height: 10,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
+                        color: statusColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        statusIcon,
+                        color: statusColor,
+                        size: 20,
                       ),
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+                  const SizedBox(width: AppDimensions.stackMd),
+                  
+                  Semantics(
+                    label: notification.read ? 'Read' : 'Unread',
+                    child: const SizedBox.shrink(),
+                  ),
+
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                              ),
+                              child: Text(
+                                notification.type.toUpperCase(),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              timeAgo,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          notification.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: notification.read ? FontWeight.w600 : FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          notification.body,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Unread dot
+                  if (!notification.read) ...[
+                    const SizedBox(width: AppDimensions.stackSm),
+                    ExcludeSemantics(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ], // closes ...[
+                ], // closes Row children
+              ), // closes Row
+            ), // closes Padding
+          ), // closes MergeSemantics
+        ), // closes InkWell
+      ), // closes ClipRRect
+  ); // closes Card
   }
 }

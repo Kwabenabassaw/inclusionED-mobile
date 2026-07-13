@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/components/playback_controller.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class VoiceSettingsScreen extends ConsumerStatefulWidget {

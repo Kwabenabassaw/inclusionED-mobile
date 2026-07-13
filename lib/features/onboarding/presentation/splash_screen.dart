@@ -28,22 +28,19 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.menu_book,
-                size: 64,
-                color: Colors.white,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/images/app_icon.png',
+                width: 112,
+                height: 112,
+                fit: BoxFit.cover,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'InclusiveEd',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              'OpenCampus LMS',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: Theme.of(context).colorScheme.onSurface,
               ),

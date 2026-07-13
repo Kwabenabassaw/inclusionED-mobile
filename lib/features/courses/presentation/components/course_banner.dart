@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
 
 class CourseBanner extends StatelessWidget {
   final Course course;
@@ -84,34 +84,45 @@ class CourseBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.stackXl),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Class Progress',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: hasImage ? Colors.white : theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
+          MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Class Progress',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: hasImage ? Colors.white : theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${(progressPercent * 100).toInt()}%',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: hasImage ? Colors.white : theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Text(
-                '${(progressPercent * 100).toInt()}%',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: hasImage ? Colors.white : theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: AppDimensions.stackSm),
+                Semantics(
+                  label: 'Course Progress',
+                  value: '${(progressPercent * 100).toInt()} percent',
+                  child: LinearProgressIndicator(
+                    value: progressPercent,
+                    backgroundColor: hasImage
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.15),
+                    color: hasImage ? Colors.greenAccent : theme.colorScheme.primary,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.stackSm),
-          LinearProgressIndicator(
-            value: progressPercent,
-            backgroundColor: hasImage
-                ? Colors.white.withValues(alpha: 0.2)
-                : theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.15),
-            color: hasImage ? Colors.greenAccent : theme.colorScheme.primary,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
+              ],
+            ),
           ),
           const SizedBox(height: AppDimensions.stackLg),
           if (currentModuleId != null)

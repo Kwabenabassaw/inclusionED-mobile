@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
-import 'package:inclusive_ed_student/shared/models/content.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
+import 'package:opencampus_lms/shared/models/content.dart';
 
 final moduleRepositoryProvider = Provider<ModuleRepository>((ref) {
   return ModuleRepository(FirebaseFirestore.instance);

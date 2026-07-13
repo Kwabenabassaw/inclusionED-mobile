@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
+import 'package:opencampus_lms/features/modules/presentation/providers/readable_text_provider.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/reading_mode_wrapper.dart';
 
-class LearningFlowCompletion extends StatelessWidget {
+class LearningFlowCompletion extends ConsumerWidget {
   final Module module;
   final VoidCallback onComplete;
 
@@ -13,10 +17,21 @@ class LearningFlowCompletion extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.marginPage),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return VisibilityDetector(
+      key: Key('completion_${module.id}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0.5) {
+          final text = 'Week Completed! Congratulations on finishing ${module.title}.';
+          if (ref.read(currentReadableTextProvider) != text) {
+            Future.microtask(() => ref.read(currentReadableTextProvider.notifier).state = text);
+          }
+        }
+      },
+      child: ReadingModeWrapper(
+        child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppDimensions.marginPage),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -60,6 +75,6 @@ class LearningFlowCompletion extends StatelessWidget {
           ],
         ),
       ),
-    );
+    )));
   }
 }

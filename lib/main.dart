@@ -3,11 +3,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:inclusive_ed_student/core/routing/app_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_theme.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
-import 'package:inclusive_ed_student/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:opencampus_lms/core/routing/app_router.dart';
+import 'package:opencampus_lms/core/theme/app_theme.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,12 +22,19 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://qczgiqusaftwmdtkvctn.supabase.co',
-    anonKey: 'sb_publishable_O-y5A6h1K47N83cKfx6Blg_ZpFrmGn0',
+    publishableKey: 'sb_publishable_O-y5A6h1K47N83cKfx6Blg_ZpFrmGn0',
   );
 
-  await Hive.initFlutter();
-  // TODO: Register Hive adapters and open boxes for offline mode
-
+  try {
+    await Hive.initFlutter();
+    await Hive.openBox<String>('courses_cache');
+    await Hive.openBox<String>('enrollments_cache');
+    await Hive.openBox<String>('pending_learning_events');
+    await Hive.openBox<String>('pending_quiz_submissions');
+  } catch (e) {
+    debugPrint('Hive initialization failed: $e');
+    // If Hive fails, we continue without offline caching instead of crashing.
+  }
   final prefs = await SharedPreferences.getInstance();
   
   runApp(
@@ -49,7 +56,7 @@ class InclusiveEdStudentApp extends ConsumerWidget {
     final accessibilitySettings = ref.watch(accessibilityProvider);
 
     return MaterialApp.router(
-      title: 'InclusiveEd Student',
+      title: 'OpenCampus LMS',
       theme: AppTheme.getTheme(accessibilitySettings),
       builder: (context, child) {
         return MediaQuery(

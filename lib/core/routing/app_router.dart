@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/widgets/main_scaffold.dart';
-import 'package:inclusive_ed_student/core/routing/go_router_refresh_stream.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
-import 'package:inclusive_ed_student/features/authentication/presentation/login_screen.dart';
-import 'package:inclusive_ed_student/features/authentication/presentation/signup_screen.dart';
-import 'package:inclusive_ed_student/features/onboarding/presentation/onboarding_screen.dart';
-import 'package:inclusive_ed_student/features/onboarding/presentation/splash_screen.dart';
-import 'package:inclusive_ed_student/features/onboarding/presentation/welcome_screen.dart';
-import 'package:inclusive_ed_student/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:inclusive_ed_student/features/courses/presentation/courses_screen.dart';
-import 'package:inclusive_ed_student/features/courses/presentation/course_details_screen.dart';
-import 'package:inclusive_ed_student/features/courses/presentation/pdf_viewer_screen.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/learning_flow_screen.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/quiz_player_wrapper.dart';
-import 'package:inclusive_ed_student/features/assistant/presentation/assistant_screen.dart';
-import 'package:inclusive_ed_student/features/calendar/presentation/calendar_screen.dart';
-import 'package:inclusive_ed_student/features/notifications/presentation/notifications_screen.dart';
-import 'package:inclusive_ed_student/features/profile/presentation/profile_screen.dart';
-import 'package:inclusive_ed_student/features/accessibility/smart_audio_reader_screen.dart';
-import 'package:inclusive_ed_student/features/profile/presentation/voice_settings_screen.dart';
+import 'package:opencampus_lms/core/widgets/main_scaffold.dart';
+import 'package:opencampus_lms/core/routing/go_router_refresh_stream.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/features/authentication/presentation/login_screen.dart';
+import 'package:opencampus_lms/features/authentication/presentation/signup_screen.dart';
+import 'package:opencampus_lms/features/onboarding/presentation/onboarding_screen.dart';
+import 'package:opencampus_lms/features/onboarding/presentation/splash_screen.dart';
+import 'package:opencampus_lms/features/onboarding/presentation/welcome_screen.dart';
+import 'package:opencampus_lms/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:opencampus_lms/features/courses/presentation/courses_screen.dart';
+import 'package:opencampus_lms/features/courses/presentation/course_details_screen.dart';
+import 'package:opencampus_lms/features/courses/presentation/pdf_viewer_screen.dart';
+import 'package:opencampus_lms/features/modules/presentation/learning_flow_screen.dart';
+import 'package:opencampus_lms/features/modules/presentation/quiz_player_wrapper.dart';
+import 'package:opencampus_lms/features/assistant/presentation/assistant_screen.dart';
+import 'package:opencampus_lms/features/calendar/presentation/calendar_screen.dart';
+import 'package:opencampus_lms/features/notifications/presentation/notifications_screen.dart';
+import 'package:opencampus_lms/features/profile/presentation/profile_screen.dart';
+import 'package:opencampus_lms/features/accessibility/smart_audio_reader_screen.dart';
+import 'package:opencampus_lms/features/profile/presentation/voice_settings_screen.dart';
+import 'package:opencampus_lms/features/reader/screens/accessible_reader_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -125,6 +126,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                             pdfUrl: extra['url'] as String? ?? '',
                           );
                         },
+                      ),
+                      GoRoute(
+                        path: 'reader/:moduleId',
+                        builder: (context, state) => AccessibleReaderScreen(
+                          courseId: state.pathParameters['courseId']!,
+                          moduleId: state.pathParameters['moduleId']!,
+                        ),
                       ),
                     ],
                   ),

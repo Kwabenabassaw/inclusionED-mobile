@@ -2,35 +2,45 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
-import 'package:inclusive_ed_student/shared/models/enrollment.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
+import 'package:opencampus_lms/shared/models/enrollment.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/core/services/offline_sync_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 final courseRepositoryProvider = Provider<CourseRepository>((ref) {
-  return CourseRepository(FirebaseFirestore.instance);
+  final offlineSync = ref.watch(offlineSyncProvider);
+  return CourseRepository(FirebaseFirestore.instance, offlineSync);
 });
 
 class CourseRepository {
   final FirebaseFirestore _firestore;
+  final OfflineSyncService _offlineSync;
 
-  CourseRepository(this._firestore);
+  CourseRepository(this._firestore, this._offlineSync);
 
   // Discover Courses Query (from documentation Phase 5)
   Future<List<Course>> fetchPublishedCourses() async {
-    final snapshot = await _firestore
-        .collection('courses')
-        .where('published', isEqualTo: true)
-        .where('archived', isEqualTo: false)
-        .get();
+    try {
+      final snapshot = await _firestore
+          .collection('courses')
+          .where('published', isEqualTo: true)
+          .where('archived', isEqualTo: false)
+          .get();
 
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
-      // Safely ensure the id from document is present, in case missing in data
-      if (!data.containsKey('id') || data['id'] == null) {
-        data['id'] = doc.id;
-      }
-      return Course.fromJson(data);
-    }).toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        if (!data.containsKey('id') || data['id'] == null) {
+          data['id'] = doc.id;
+        }
+        _offlineSync.cacheCourse(data['id'] as String, data);
+        return Course.fromJson(data);
+      }).toList();
+    } catch (e) {
+      // Fallback to cache
+      final cached = _offlineSync.getAllCachedCourses();
+      return cached.map((data) => Course.fromJson(data)).toList();
+    }
   }
 
   // Student Courses Query by Status
@@ -69,13 +79,22 @@ class CourseRepository {
 
   // Fetch Course By ID
   Future<Course?> fetchCourseById(String courseId) async {
-    final doc = await _firestore.collection('courses').doc(courseId).get();
-    if (!doc.exists) return null;
-    final data = doc.data()!;
-    if (!data.containsKey('id') || data['id'] == null) {
-      data['id'] = doc.id;
+    try {
+      final doc = await _firestore.collection('courses').doc(courseId).get();
+      if (!doc.exists) return null;
+      final data = doc.data()!;
+      if (!data.containsKey('id') || data['id'] == null) {
+        data['id'] = doc.id;
+      }
+      _offlineSync.cacheCourse(courseId, data);
+      return Course.fromJson(data);
+    } catch (e) {
+      final cachedData = _offlineSync.getCachedCourse(courseId);
+      if (cachedData != null) {
+        return Course.fromJson(cachedData);
+      }
+      return null;
     }
-    return Course.fromJson(data);
   }
 
   // Fetch All Enrolled Course IDs (Active, Pending, Completed)
@@ -117,9 +136,16 @@ class CourseRepository {
     int? timeSpentSeconds,
     int? readingPercentage,
   }) async {
-    // We assume the caller gets the enrollment ID via standard flow, 
-    // or we fetch it if missing. To keep it simple, we fetch the active enrollment.
-    final user = await _firestore.collection('enrollments').where('courseId', isEqualTo: courseId).where('status', isEqualTo: 'ACTIVE').get();
+    // Fetch active enrollment for the current user
+    final auth = FirebaseAuth.instance;
+    final currentStudentId = auth.currentUser?.uid;
+    if (currentStudentId == null) return;
+
+    final user = await _firestore.collection('enrollments')
+        .where('courseId', isEqualTo: courseId)
+        .where('studentId', isEqualTo: currentStudentId)
+        .where('status', isEqualTo: 'ACTIVE')
+        .get();
     if (user.docs.isEmpty) return;
     final enrollmentId = user.docs.first.id;
 
@@ -144,18 +170,33 @@ class CourseRepository {
 
       if (response.statusCode != 200) {
         print("Failed to log learning event: \${response.body}");
+        _offlineSync.queueLearningEvent(body);
       }
     } catch (e) {
       print("Error logging learning event: $e");
-      // Fallback: Queue offline (to be implemented in Hive/SQLite)
+      final fallbackBody = {
+        'enrollmentId': enrollmentId,
+        'courseId': courseId,
+        'itemId': itemId,
+        'type': type,
+        'status': status,
+        if (timeSpentSeconds != null) 'timeSpentSeconds': timeSpentSeconds,
+        if (readingPercentage != null) 'readingPercentage': readingPercentage,
+      };
+      _offlineSync.queueLearningEvent(fallbackBody);
     }
   }
 
   // Submit Quiz
   Future<void> submitQuiz(Map<String, dynamic> submissionData) async {
-    final docRef = _firestore.collection('quizSubmissions').doc();
-    submissionData['id'] = docRef.id;
-    await docRef.set(submissionData);
+    try {
+      final docRef = _firestore.collection('quizSubmissions').doc();
+      submissionData['id'] = docRef.id;
+      await docRef.set(submissionData);
+    } catch (e) {
+      print("Error submitting quiz: $e");
+      _offlineSync.queueQuizSubmission(submissionData);
+    }
   }
 }
 

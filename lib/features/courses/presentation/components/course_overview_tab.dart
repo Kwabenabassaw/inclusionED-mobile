@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
 
 class CourseOverviewTab extends ConsumerWidget {
   final Course course;

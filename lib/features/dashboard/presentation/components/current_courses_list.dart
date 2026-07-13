@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
+import 'package:opencampus_lms/core/widgets/glass_card.dart';
 
 class CurrentCoursesList extends ConsumerWidget {
   const CurrentCoursesList({super.key});
@@ -79,26 +80,18 @@ class CurrentCoursesList extends ConsumerWidget {
   Widget _buildCourseCard(BuildContext context, Course course) {
     final theme = Theme.of(context);
     
-    return Container(
+    return SizedBox(
       width: 200,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: theme.colorScheme.surfaceContainerHighest,
-          width: 1.5,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.go('/courses/${course.id}'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Course Cover Image
+      child: GlassCard(
+        margin: EdgeInsets.zero,
+        padding: EdgeInsets.zero,
+      child: MergeSemantics(
+        child: InkWell(
+          onTap: () => context.go('/courses/${course.id}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+                  // Course Cover Image
                 Expanded(
                   flex: 5,
                   child: Stack(
@@ -131,11 +124,14 @@ class CurrentCoursesList extends ConsumerWidget {
                                 color: theme.colorScheme.onPrimaryContainer,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                '${course.accessibilityScore}%',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.bold,
+                              Semantics(
+                                label: 'Accessibility Score',
+                                child: Text(
+                                  '${course.accessibilityScore}%',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
@@ -191,12 +187,11 @@ class CurrentCoursesList extends ConsumerWidget {
                     ),
                   ),
                 ),
-              ],
-            ),
+                ],
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildPlaceholderCover(BuildContext context) {

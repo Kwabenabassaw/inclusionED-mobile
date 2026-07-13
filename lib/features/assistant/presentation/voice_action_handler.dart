@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:string_similarity/string_similarity.dart';
-import 'package:inclusive_ed_student/features/accessibility/unified_tts_controller.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/components/playback_controller.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
-import 'package:inclusive_ed_student/features/dashboard/data/dashboard_repository.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
+import 'package:opencampus_lms/features/accessibility/unified_tts_controller.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/dashboard/data/dashboard_repository.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
 
 class VoiceActionHandler {
   final PlaybackController playbackController; 
@@ -209,7 +209,7 @@ class VoiceActionHandler {
         break;
 
       case 'pauseReading':
-        if (playbackController.state.state == PlaybackState.speaking) {
+        if (ref.read(playbackControllerProvider).state == PlaybackState.speaking) {
           await playbackController.pause();
           await fallbackTts.speak("Reading paused.");
         } else {
@@ -226,7 +226,7 @@ class VoiceActionHandler {
         break;
 
       case 'increaseTextSize':
-        final currentScale = accessibilityController.state.textScale;
+        final currentScale = ref.read(accessibilityProvider).textScale;
         if (currentScale < 3.0) {
           accessibilityController.setTextScale(currentScale + 0.2);
           await fallbackTts.speak("Text size increased.");
@@ -236,7 +236,7 @@ class VoiceActionHandler {
         break;
 
       case 'decreaseTextSize':
-        final currentScale = accessibilityController.state.textScale;
+        final currentScale = ref.read(accessibilityProvider).textScale;
         if (currentScale > 0.8) {
           accessibilityController.setTextScale(currentScale - 0.2);
           await fallbackTts.speak("Text size decreased.");

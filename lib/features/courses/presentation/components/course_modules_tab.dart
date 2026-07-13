@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
 
 class CourseModulesTab extends ConsumerWidget {
   final String courseId;
@@ -241,7 +241,7 @@ class _ModuleTimelineCard extends ConsumerWidget {
                           contentsAsync.when(
                             data: (contents) {
                               if (contents.isEmpty) return const SizedBox.shrink();
-                              final completedCount = contents.where((c) => completedContentIds.contains(c.id)).length;
+                              final completedCount = contents.where((c) => completedContentIds.contains(c?.id)).length;
                               final progress = completedCount / contents.length;
 
                               return Column(
@@ -278,6 +278,15 @@ class _ModuleTimelineCard extends ConsumerWidget {
                             },
                             loading: () => const LinearProgressIndicator(minHeight: 2),
                             error: (err, stack) => const SizedBox.shrink(),
+                          ),
+                          const SizedBox(height: AppDimensions.stackLg),
+                          OutlinedButton.icon(
+                            onPressed: () => context.go('/courses/$courseId/reader/${module.id}'),
+                            icon: const Icon(Icons.accessibility_new),
+                            label: const Text('Accessible Reader'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(40),
+                            ),
                           ),
                         ],
                       ],

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
 
 import 'components/course_banner.dart';
 import 'components/course_navigation_chips.dart';
@@ -53,7 +53,8 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     final theme = Theme.of(context);
 
     return asyncCourse.when(
-      data: (course) {
+      data: (courseData) {
+        final course = courseData as Course?;
         if (course == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Course Details')),
@@ -62,13 +63,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
         }
 
         final enrollment = enrollmentStream.value;
-        final modules = asyncModules.value ?? [];
+        final modules = asyncModules.value ?? <Module>[];
         final progressPercent = _calculateProgress(enrollment, modules);
         
         // Find the first module that is not fully completed to act as "Current"
         final completedModuleIds = enrollment?.progress?.completedModuleIds ?? [];
         final currentModule = modules.isNotEmpty 
-            ? modules.firstWhere((m) => !completedModuleIds.contains(m.id), orElse: () => modules.first)
+            ? modules.firstWhere((m) => !completedModuleIds.contains(m?.id), orElse: () => modules.first)
             : null;
 
         return Scaffold(

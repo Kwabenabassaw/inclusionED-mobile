@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 
 class AccessibilitySettingsModal extends ConsumerWidget {
   const AccessibilitySettingsModal({super.key});

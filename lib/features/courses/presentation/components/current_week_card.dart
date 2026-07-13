@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
 
 class CurrentWeekCard extends StatelessWidget {
   final Module? activeModule;
@@ -44,67 +44,85 @@ class CurrentWeekCard extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLowest,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-              child: InkWell(
-                onTap: () => context.go('/courses/${activeModule!.courseId}/modules/${activeModule!.id}'),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppDimensions.stackLg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () => context.go('/courses/${activeModule!.courseId}/modules/${activeModule!.id}'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: AppDimensions.stackLg, 
+                        right: AppDimensions.stackLg, 
+                        top: AppDimensions.stackLg, 
+                        bottom: AppDimensions.stackSm
+                      ),
+                      child: MergeSemantics(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                                  ),
+                                  child: Text(
+                                    'WEEK ${activeModule!.orderIndex + 1}',
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 14,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              'WEEK ${activeModule!.orderIndex + 1}',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer,
+                            const SizedBox(height: AppDimensions.stackMd),
+                            Text(
+                              activeModule!.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.stackMd),
-                      Text(
-                        activeModule!.title,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                            const SizedBox(height: AppDimensions.stackSm),
+                            Text(
+                              activeModule!.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.stackSm),
-                      Text(
-                        activeModule!.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: AppDimensions.stackLg),
-                      ElevatedButton(
-                        onPressed: () => context.go('/courses/${activeModule!.courseId}/modules/${activeModule!.id}'),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                          ),
-                        ),
-                        child: const Text('Start Studying Now'),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppDimensions.stackLg, 
+                      right: AppDimensions.stackLg, 
+                      bottom: AppDimensions.stackLg
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => context.go('/courses/${activeModule!.courseId}/modules/${activeModule!.id}'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                        ),
+                      ),
+                      child: const Text('Start Studying Now'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

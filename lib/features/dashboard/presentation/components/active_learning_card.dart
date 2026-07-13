@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
-import 'package:inclusive_ed_student/shared/models/enrollment.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
+import 'package:opencampus_lms/shared/models/enrollment.dart';
+import 'package:opencampus_lms/core/widgets/glass_card.dart';
 
 class ActiveLearningCard extends ConsumerWidget {
   const ActiveLearningCard({super.key});
@@ -42,13 +43,9 @@ class ActiveLearningCard extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(color: theme.colorScheme.surfaceContainerHighest, width: 1.5),
-      ),
-      color: theme.colorScheme.surface,
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      borderRadius: AppDimensions.radiusLg,
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.stackLg),
         child: Column(
@@ -83,11 +80,9 @@ class ActiveLearningCard extends ConsumerWidget {
   }
 
   Widget _buildSkeleton(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-      ),
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      borderRadius: AppDimensions.radiusLg,
       child: Container(
         height: 240,
         alignment: Alignment.center,
@@ -131,7 +126,7 @@ class _ActiveCourseLoader extends ConsumerWidget {
 
             // Get first incomplete module, or fallback to the last module
             final activeModule = modules.firstWhere(
-              (m) => !completedModuleIds.contains(m.id),
+              (m) => m != null && !completedModuleIds.contains(m.id),
               orElse: () => modules.last,
             );
 
@@ -152,11 +147,9 @@ class _ActiveCourseLoader extends ConsumerWidget {
 
   Widget _buildNoModulesCard(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(color: theme.colorScheme.surfaceContainerHighest),
-      ),
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      borderRadius: AppDimensions.radiusLg,
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.stackLg),
         child: Text(
@@ -193,18 +186,9 @@ class _ActiveModuleCard extends ConsumerWidget {
           progress = completedCount / contents.length;
         }
 
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-            side: BorderSide(
-              color: theme.colorScheme.surfaceContainerHighest,
-              width: 1.5,
-            ),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        return MergeSemantics(
+          child: GlassCard(
+            padding: EdgeInsets.zero,
             onTap: () {
               context.go('/courses/${course.id}/modules/${module.id}');
             },
@@ -212,16 +196,18 @@ class _ActiveModuleCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Banner Image / Background
-                if (course.imageUrl != null && course.imageUrl!.isNotEmpty)
-                  Image.network(
-                    course.imageUrl!,
-                    height: 140,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderBanner(context),
-                  )
-                else
-                  _buildPlaceholderBanner(context),
+              Hero(
+                tag: 'course_cover_${course.id}',
+                child: course.imageUrl != null && course.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        course.imageUrl!,
+                        height: 140,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildPlaceholderBanner(context),
+                      )
+                    : _buildPlaceholderBanner(context),
+              ),
                 
                 Padding(
                   padding: const EdgeInsets.all(AppDimensions.stackLg),
@@ -277,12 +263,16 @@ class _ActiveModuleCard extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppDimensions.stackSm),
-                      LinearProgressIndicator(
-                        value: progress,
-                        backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                        color: theme.colorScheme.primary,
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(4),
+                      Semantics(
+                        label: 'Course Progress',
+                        value: '${(progress * 100).toInt()} percent completed',
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                          color: theme.colorScheme.primary,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ],
                   ),

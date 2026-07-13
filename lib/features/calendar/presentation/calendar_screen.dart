@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/dashboard/data/dashboard_repository.dart';
-import 'package:inclusive_ed_student/shared/models/calendar_event.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/dashboard/data/dashboard_repository.dart';
+import 'package:opencampus_lms/shared/models/calendar_event.dart';
+import 'package:opencampus_lms/core/widgets/glass_card.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -81,20 +82,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Calendar Card Wrapper
-              Card(
+              GlassCard(
                 margin: const EdgeInsets.all(AppDimensions.marginPage),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                  side: BorderSide(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    width: 1.5,
-                  ),
-                ),
-                color: theme.colorScheme.surfaceContainerLowest,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TableCalendar<CalendarEvent>(
+                padding: const EdgeInsets.all(8.0),
+                borderRadius: AppDimensions.radiusLg,
+                child: TableCalendar<CalendarEvent>(
                     firstDay: DateTime.utc(2025, 1, 1),
                     lastDay: DateTime.utc(2030, 12, 31),
                     focusedDay: _focusedDay,
@@ -161,7 +153,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   ),
                 ),
-              ),
               
               // Header listing events count
               Padding(
@@ -198,17 +189,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildEventCard(BuildContext context, CalendarEvent event) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     // Customize style based on event type
     Color typeColor;
     IconData typeIcon;
     switch (event.type.toLowerCase()) {
       case 'quiz':
-        typeColor = Colors.orange;
+        typeColor = isDark ? Colors.orange.shade300 : Colors.orange.shade800;
         typeIcon = Icons.quiz_outlined;
         break;
       case 'assignment':
-        typeColor = Colors.red;
+        typeColor = isDark ? Colors.red.shade300 : Colors.red.shade700;
         typeIcon = Icons.assignment_outlined;
         break;
       case 'class':
@@ -221,19 +213,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         typeIcon = Icons.event_available_outlined;
     }
 
-    return Card(
-      elevation: 0,
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: AppDimensions.stackMd),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(
-          color: theme.colorScheme.surfaceContainerHighest,
-          width: 1.5,
-        ),
-      ),
-      color: theme.colorScheme.surfaceContainerLowest,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      padding: EdgeInsets.zero,
+      borderRadius: AppDimensions.radiusLg,
+      child: Semantics(
+        label: '${event.type} event: ${event.title}',
+        hint: 'Double tap to open event details',
+        button: true,
         child: InkWell(
           onTap: () {
             // Contextual routing:

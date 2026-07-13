@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:inclusive_ed_student/shared/models/user_profile.dart';
-import 'package:inclusive_ed_student/features/notifications/data/fcm_service.dart';
+import 'package:opencampus_lms/shared/models/user_profile.dart';
+import 'package:opencampus_lms/features/notifications/data/fcm_service.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
@@ -26,6 +27,17 @@ class AuthRepository {
         _fcmService.setupFCM(user.uid);
       }
     });
+    _initGoogleSignIn();
+  }
+
+  Future<void> _initGoogleSignIn() async {
+    try {
+      await _googleSignIn.initialize(
+        serverClientId: '632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com',
+      );
+    } catch (e) {
+      debugPrint('GoogleSignIn initialization error: $e');
+    }
   }
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();

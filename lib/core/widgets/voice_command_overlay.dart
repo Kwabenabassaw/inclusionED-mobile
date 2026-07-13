@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/services/voice/voice_command_state.dart';
-import 'package:inclusive_ed_student/core/providers/voice_overlay_controller.dart';
-import 'package:inclusive_ed_student/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/providers/voice_overlay_controller.dart';
+import 'package:opencampus_lms/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/services/voice/voice_command_state.dart';
 
 /// Shows the [VoiceCommandOverlay] as a modal bottom sheet on top of the
 /// current screen.

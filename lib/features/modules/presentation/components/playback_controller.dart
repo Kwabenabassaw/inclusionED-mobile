@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:inclusive_ed_student/features/lessons/data/tts_repository.dart';
-import 'package:inclusive_ed_student/features/lessons/data/audio_cache_service.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/lessons/data/tts_repository.dart';
+import 'package:opencampus_lms/features/lessons/data/audio_cache_service.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'dart:io' show Platform;
 import 'package:flutter_tts/flutter_tts.dart';
 

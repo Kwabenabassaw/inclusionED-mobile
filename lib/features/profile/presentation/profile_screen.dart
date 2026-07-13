@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
-import 'package:inclusive_ed_student/shared/models/user_profile.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
-import 'package:inclusive_ed_student/features/accessibility/presentation/screen_reader_wrapper.dart';
-import 'package:inclusive_ed_student/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/shared/models/user_profile.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/accessibility/presentation/screen_reader_wrapper.dart';
+import 'package:opencampus_lms/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
+import 'package:app_settings/app_settings.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -26,7 +28,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -123,7 +125,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           controller: _tabController,
                           children: [
                             _buildAccessibilityTab(context),
-                            _buildLearningTab(context),
                             _buildSettingsTab(context),
                           ],
                         ),
@@ -181,17 +182,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 Icon(Icons.accessibility_new, size: 16),
                 SizedBox(width: 6),
                 Text('Accessibility'),
-              ],
-            ),
-          ),
-          Tab(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.school, size: 16),
-                SizedBox(width: 6),
-                Text('Learning'),
               ],
             ),
           ),
@@ -320,12 +310,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               ),
             ),
             const SizedBox(height: 20),
-            Container(
+            GlassCard(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
+              borderRadius: 16,
               child: GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -460,87 +447,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 theme: theme,
                 onChanged: (val) => notifier.updateSettings(settings.copyWith(reduceMotion: val)),
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLearningTab(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _buildCategoryCard(
-            title: 'Downloads & Storage',
-            icon: Icons.sd_card,
-            theme: theme,
-            children: [
               _buildInteractiveTile(
-                leading: Icons.download_done,
-                title: 'Downloaded Lessons',
-                subtitle: 'Manage local content',
+                leading: Icons.settings_accessibility,
+                title: 'System Accessibility Settings',
+                subtitle: 'Turn on TalkBack, Voice Access, etc.',
                 theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.storage,
-                title: 'Offline Storage',
-                subtitle: 'Cache configuration',
-                theme: theme,
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryCard(
-            title: 'Progress & Stats',
-            icon: Icons.analytics,
-            theme: theme,
-            children: [
-              _buildInteractiveTile(
-                leading: Icons.bar_chart,
-                title: 'Learning Statistics',
-                subtitle: 'View study overview',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.local_fire_department,
-                title: 'Study Streak',
-                subtitle: 'Keep your daily momentum',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.history,
-                title: 'Reading History',
-                subtitle: 'Recently read materials',
-                theme: theme,
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryCard(
-            title: 'Saved Items',
-            icon: Icons.bookmarks,
-            theme: theme,
-            children: [
-              _buildInteractiveTile(
-                leading: Icons.bookmark,
-                title: 'Bookmarks',
-                subtitle: 'Your highlighted clips',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.note,
-                title: 'Notes',
-                subtitle: 'Classroom annotations',
-                theme: theme,
-                onTap: () {},
+                onTap: () => AppSettings.openAppSettings(type: AppSettingsType.accessibility),
               ),
             ],
           ),
@@ -564,27 +476,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 leading: Icons.notifications,
                 title: 'Notifications',
                 subtitle: 'Sound and alerts preferences',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.privacy_tip,
-                title: 'Privacy',
-                subtitle: 'App permissions & tracking',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.security,
-                title: 'Security',
-                subtitle: 'Passcode & biometric logins',
-                theme: theme,
-                onTap: () {},
-              ),
-              _buildInteractiveTile(
-                leading: Icons.language,
-                title: 'Language',
-                subtitle: 'Default translation settings',
                 theme: theme,
                 onTap: () {},
               ),
@@ -633,12 +524,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required ThemeData theme,
     required List<Widget> children,
   }) {
-    return Card(
+    return GlassCard(
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
-      ),
+      padding: EdgeInsets.zero,
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(

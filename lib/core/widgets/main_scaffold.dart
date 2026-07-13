@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/widgets/voice_command_overlay.dart';
+import 'package:opencampus_lms/core/providers/global_fab_provider.dart';
+import 'package:opencampus_lms/core/widgets/voice_command_overlay.dart';
 
 class MainScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -22,6 +23,9 @@ class MainScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Determine if we should use NavigationRail (tablets) or BottomNavigationBar (phones)
     final bool isTablet = MediaQuery.of(context).size.width > 600;
+    
+    // Hide global FAB if requested by a child screen (like the quiz screen)
+    final bool hideFab = ref.watch(hideGlobalFabProvider);
 
     if (isTablet) {
       return Scaffold(
@@ -63,7 +67,7 @@ class MainScaffold extends ConsumerWidget {
             Expanded(child: navigationShell),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: hideFab ? null : FloatingActionButton(
           // [idle → listening] — double-tap guard is enforced inside
           // showVoiceCommandOverlay via controller.isActive.
           onPressed: () => showVoiceCommandOverlay(context, ref),
@@ -107,7 +111,7 @@ class MainScaffold extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: hideFab ? null : FloatingActionButton(
         // [idle → listening] — double-tap guard is enforced inside
         // showVoiceCommandOverlay via controller.isActive.
         onPressed: () => showVoiceCommandOverlay(context, ref),

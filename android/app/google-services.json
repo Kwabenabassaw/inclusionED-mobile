@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "632665830727-5brsfs101ffgg20oke4iuepl5hg7m5ao.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inclusiveed.inclusive_ed_student",
+            "certificate_hash": "6553d9b47bc132e0caba05591597fa2dfb6348bf"
+          }
+        },
+        {
           "client_id": "632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,49 @@
             {
               "client_id": "632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "632665830727-74a2nnu81ip8pnhrvt59dcntdp3adl6r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.inclusiveed.inclusiveEdStudent"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:632665830727:android:98209eff56dd9c885b0862",
+        "android_client_info": {
+          "package_name": "com.opencampus.lms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUk3bCcQVARThpEe2c_j-NNiMe7bghxQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "632665830727-74a2nnu81ip8pnhrvt59dcntdp3adl6r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.inclusiveed.inclusiveEdStudent"
+              }
             }
           ]
         }

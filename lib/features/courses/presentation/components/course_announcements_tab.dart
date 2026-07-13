@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/shared/models/announcement.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/shared/models/announcement.dart';
 
 final courseAnnouncementsProvider = StreamProvider.family<List<Announcement>, String>((ref, courseId) {
   final query = FirebaseFirestore.instance

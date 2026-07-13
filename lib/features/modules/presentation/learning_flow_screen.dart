@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/modules/data/module_repository.dart';
-import 'package:inclusive_ed_student/features/quizzes/data/quiz_repository.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/shared/models/module.dart';
-import 'package:inclusive_ed_student/shared/models/quiz.dart';
-import 'package:inclusive_ed_student/shared/models/enrollment.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/core/providers/global_fab_provider.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/features/quizzes/data/quiz_repository.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/shared/models/module.dart';
+import 'package:opencampus_lms/shared/models/quiz.dart';
+import 'package:opencampus_lms/shared/models/enrollment.dart';
 
 // Components for the flow
 import 'components/learning_flow_overview.dart';
@@ -15,7 +16,11 @@ import 'components/learning_flow_reader.dart';
 import 'components/playback_controller.dart';
 import 'components/learning_flow_summary.dart';
 import 'components/learning_flow_completion.dart';
+
 import 'quiz_screen.dart';
+import 'package:opencampus_lms/features/accessibility/presentation/display_settings_bottom_sheet.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/learning_flow_audio_dock.dart';
+import 'package:opencampus_lms/features/modules/presentation/providers/readable_text_provider.dart';
 
 class LearningFlowScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -39,6 +44,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
   void dispose() {
     // Safety net: force stop TTS when leaving the whole learning flow
     ref.read(playbackControllerProvider.notifier).stopForNavigation();
+    ref.read(hideGlobalFabProvider.notifier).state = false;
     _pageController.dispose();
     super.dispose();
   }
@@ -123,6 +129,15 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
     // Don't show bottom bar on Quiz screen if we want quiz to manage its own submit button,
     // but QuizScreen requires answers. For now, let's keep the flow controller at the bottom.
     final isQuizPage = quiz != null && _currentPage == 3;
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final currentlyHidden = ref.read(hideGlobalFabProvider);
+        if (currentlyHidden != isQuizPage) {
+          ref.read(hideGlobalFabProvider.notifier).state = isQuizPage;
+        }
+      }
+    });
 
     return Column(
       children: [
@@ -136,6 +151,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.primary),
+                  tooltip: 'Back to course',
                   onPressed: () {
                     // Safety net: force stop TTS on explicit back navigation
                     ref.read(playbackControllerProvider.notifier).stopForNavigation();
@@ -153,35 +169,21 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (_currentPage == 1) ...[
-                  // Reading Controls (shown only on Reader page)
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Text('Tt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          onPressed: () {},
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        Container(width: 1, height: 20, color: Theme.of(context).colorScheme.outlineVariant),
-                        IconButton(
-                          icon: const Text('TT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          onPressed: () {},
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                  ),
+                if (_currentPage <= 1) ...[
+                  // Reading Controls (shown only on Reader and Overview pages)
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  //     borderRadius: BorderRadius.circular(20),
+                  //   ),
+                   
+                  // ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.settings_outlined, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(Icons.text_fields_rounded, color: Theme.of(context).colorScheme.primary),
+                    tooltip: 'Display Settings',
                     onPressed: () {
-                      // Handled inside LearningFlowReader if possible, or trigger accessibility modal
+                      showDisplaySettingsBottomSheet(context);
                     },
                   ),
                 ]
@@ -191,11 +193,15 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
         ),
         
         // Top Progress Bar
-        LinearProgressIndicator(
-          value: (_currentPage + 1) / totalPages,
-          minHeight: 4,
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+        Semantics(
+          label: 'Learning Progress',
+          value: 'Page ${_currentPage + 1} of $totalPages',
+          child: LinearProgressIndicator(
+            value: (_currentPage + 1) / totalPages,
+            minHeight: 4,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+          ),
         ),
         
         // Page Content
@@ -206,6 +212,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
             onPageChanged: (index) {
               // Silence audio immediately when swapping pages
               ref.read(playbackControllerProvider.notifier).stopForNavigation();
+              ref.read(currentReadableTextProvider.notifier).state = '';
               setState(() {
                 _currentPage = index;
               });
@@ -214,9 +221,11 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
           ),
         ),
         
-        // Bottom Navigation Bar (Hidden on Reader page since it has an audio player)
-        if (_currentPage != 1)
-          Container(
+        // Global Audio Dock
+        const LearningFlowAudioDock(),
+        
+        // Bottom Navigation Bar
+        Container(
             padding: const EdgeInsets.all(AppDimensions.marginPage),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,

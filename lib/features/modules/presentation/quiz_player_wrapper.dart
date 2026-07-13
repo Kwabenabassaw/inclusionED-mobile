@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/features/quizzes/data/quiz_repository.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/quiz_screen.dart';
+import 'package:opencampus_lms/features/quizzes/data/quiz_repository.dart';
+import 'package:opencampus_lms/features/modules/presentation/quiz_screen.dart';
 
 class QuizPlayerWrapper extends ConsumerWidget {
   final String courseId;

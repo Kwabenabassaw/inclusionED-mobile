@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:opencampus_lms/core/services/intent/command_interpreter.dart';
+import 'package:opencampus_lms/core/services/voice/speech_engine.dart';
+import 'package:opencampus_lms/core/services/voice/voice_command_state.dart';
 import 'package:record/record.dart';
-import 'package:inclusive_ed_student/core/services/voice/voice_command_state.dart';
-import 'package:inclusive_ed_student/core/services/voice/speech_engine.dart';
-import 'package:inclusive_ed_student/core/services/intent/command_interpreter.dart';
 
 /// Data class that represents the full state snapshot of the voice overlay.
 class VoiceOverlayData {

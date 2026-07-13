@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/authentication/presentation/auth_controller.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/authentication/presentation/auth_controller.dart';
 import 'package:go_router/go_router.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -49,7 +49,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           onPressed: () => context.go('/login'),
         ),
         title: Text(
-          'InclusiveEd',
+          'OpenCampus LMS',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w900,
             color: Theme.of(context).colorScheme.primary,
@@ -57,12 +57,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.accessibility_new, color: Theme.of(context).colorScheme.primary),
-            onPressed: () {},
-          ),
-        ],
+        actions: [],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,36 +73,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Join our accessible learning community.\nFill in your details to get started.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
+          
               const SizedBox(height: 24),
               
-              // Illustration (using the welcome illustration from assets)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  'assets/images/welcome_illustration.png',
-                  height: 160,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
-                      height: 160,
-                      child: Center(child: Icon(Icons.group, size: 64, color: Colors.grey)),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 32),
+
+
               
               // Form Fields
               Text(

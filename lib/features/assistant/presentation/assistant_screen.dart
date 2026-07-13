@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/providers/voice_providers.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
   const AssistantScreen({super.key});

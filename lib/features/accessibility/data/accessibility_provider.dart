@@ -8,6 +8,7 @@ class AccessibilitySettings {
   final double textScale;
   final String fontFamily;
   final double lineSpacing;
+  final bool boldText;
   final bool highContrast;
   final bool darkMode;
   final bool reduceMotion;
@@ -33,6 +34,7 @@ class AccessibilitySettings {
     this.textScale = 1.0,
     this.fontFamily = 'System', // Will map to system font
     this.lineSpacing = 1.2,
+    this.boldText = false,
     this.highContrast = false,
     this.darkMode = false,
     this.reduceMotion = false,
@@ -59,6 +61,7 @@ class AccessibilitySettings {
     double? textScale,
     String? fontFamily,
     double? lineSpacing,
+    bool? boldText,
     bool? highContrast,
     bool? darkMode,
     bool? reduceMotion,
@@ -84,6 +87,7 @@ class AccessibilitySettings {
       textScale: textScale ?? this.textScale,
       fontFamily: fontFamily ?? this.fontFamily,
       lineSpacing: lineSpacing ?? this.lineSpacing,
+      boldText: boldText ?? this.boldText,
       highContrast: highContrast ?? this.highContrast,
       darkMode: darkMode ?? this.darkMode,
       reduceMotion: reduceMotion ?? this.reduceMotion,
@@ -119,6 +123,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
       textScale: prefs.getDouble('textScale') ?? 1.0,
       fontFamily: prefs.getString('fontFamily') ?? 'System',
       lineSpacing: prefs.getDouble('lineSpacing') ?? 1.2,
+      boldText: prefs.getBool('boldText') ?? false,
       highContrast: prefs.getBool('highContrast') ?? false,
       darkMode: prefs.getBool('darkMode') ?? false,
       reduceMotion: prefs.getBool('reduceMotion') ?? false,
@@ -147,6 +152,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
     await prefs.setDouble('textScale', newSettings.textScale);
     await prefs.setString('fontFamily', newSettings.fontFamily);
     await prefs.setDouble('lineSpacing', newSettings.lineSpacing);
+    await prefs.setBool('boldText', newSettings.boldText);
     await prefs.setBool('highContrast', newSettings.highContrast);
     await prefs.setBool('darkMode', newSettings.darkMode);
     await prefs.setBool('reduceMotion', newSettings.reduceMotion);
@@ -210,19 +216,20 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
   void setTextScale(double scale) => updateSettings(state.copyWith(textScale: scale));
   void setFontFamily(String family) => updateSettings(state.copyWith(fontFamily: family));
   void setLineSpacing(double spacing) => updateSettings(state.copyWith(lineSpacing: spacing));
+  void toggleBoldText() => updateSettings(state.copyWith(boldText: !state.boldText));
   void toggleHighContrast() => updateSettings(state.copyWith(highContrast: !state.highContrast));
   void toggleDarkMode() => updateSettings(state.copyWith(darkMode: !state.darkMode));
-  void setReadingSpeed(double speed) => updateSettings(state.copyWith(readingSpeed: speed));
+  void setReadingSpeed(double speed) => updateSettings(state.copyWith(readingSpeed: speed > 3.0 ? 3.0 : speed));
   void setPreferredVoice(String voice) => updateSettings(state.copyWith(preferredVoice: voice));
   void toggleScreenReaderEnabled() => updateSettings(state.copyWith(screenReaderEnabled: !state.screenReaderEnabled));
   void setTtsEngine(String engine) => updateSettings(state.copyWith(ttsEngine: engine));
 
-  void setPollySpeed(double val) => updateSettings(state.copyWith(pollySpeed: val));
+  void setPollySpeed(double val) => updateSettings(state.copyWith(pollySpeed: val > 3.0 ? 3.0 : val));
   void setPollyPitch(double val) => updateSettings(state.copyWith(pollyPitch: val));
   void setPollyVolume(double val) => updateSettings(state.copyWith(pollyVolume: val));
   void setPollyVoice(String val) => updateSettings(state.copyWith(pollyVoice: val));
 
-  void setNativeSpeed(double val) => updateSettings(state.copyWith(nativeSpeed: val));
+  void setNativeSpeed(double val) => updateSettings(state.copyWith(nativeSpeed: val > 3.0 ? 3.0 : val));
   void setNativePitch(double val) => updateSettings(state.copyWith(nativePitch: val));
   void setNativeVolume(double val) => updateSettings(state.copyWith(nativeVolume: val));
   void setNativeVoice(String val) => updateSettings(state.copyWith(nativeVoice: val));

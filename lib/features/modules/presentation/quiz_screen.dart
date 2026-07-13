@@ -4,12 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:string_similarity/string_similarity.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/shared/models/quiz.dart';
-import 'package:inclusive_ed_student/features/courses/data/course_repository.dart';
-import 'package:inclusive_ed_student/shared/models/enrollment.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/quiz_results_screen.dart';
-import 'package:inclusive_ed_student/features/accessibility/unified_tts_controller.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/shared/models/quiz.dart';
+import 'package:opencampus_lms/features/courses/data/course_repository.dart';
+import 'package:opencampus_lms/shared/models/enrollment.dart';
+import 'package:opencampus_lms/features/modules/presentation/quiz_results_screen.dart';
+import 'package:opencampus_lms/features/accessibility/unified_tts_controller.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/accessibility/presentation/display_settings_bottom_sheet.dart';
 
 // ─── Riverpod State Management for Voice ──────────────────────────────────────
 
@@ -146,7 +148,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
   // Accessibility State
   final UnifiedTtsController _ttsController = UnifiedTtsController();
-  double _fontScaleMultiplier = 1.0;
+  double get _fontScaleMultiplier => ref.watch(accessibilityProvider).textScale;
+  
+  // Highlight tracking
+  int _highlightStart = 0;
+  int _highlightEnd = 0;
+  int _questionOffsetStart = 0;
+  int _questionOffsetEnd = 0;
+  List<int> _optionOffsetStarts = [];
+  List<int> _optionOffsetEnds = [];
 
   // Mic pulse animation
   late AnimationController _pulseAnimController;
@@ -155,7 +165,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   @override
   void initState() {
     super.initState();
-    _ttsController.initialize();
+    _initTts();
 
     _pulseAnimController = AnimationController(
       vsync: this,
@@ -188,10 +198,26 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     });
   }
 
+  Future<void> _initTts() async {
+    await _ttsController.initialize();
+    _ttsController.onProgressUpdate = (start, end) {
+      if (mounted) {
+        setState(() {
+          _highlightStart = start;
+          _highlightEnd = end;
+        });
+      }
+    };
+    _ttsController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     _timer?.cancel();
+    _ttsController.stop();
     _ttsController.dispose();
     _pulseAnimController.dispose();
     super.dispose();
@@ -222,6 +248,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       _ttsController.speak('Answer cleared. Tap the mic to answer again.');
       return;
     }
+    if (_isPlayCommand(lower)) {
+      _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex], forcePlay: true);
+      return;
+    }
 
     // 2. Try to match as an answer to the current question
     _matchVoiceToAnswer(voiceText);
@@ -249,6 +279,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       lower.contains('reanswer') ||
       lower == 'clear' ||
       lower == 'redo';
+
+  bool _isPlayCommand(String lower) =>
+      lower.contains('play') ||
+      lower.contains('read') ||
+      lower.contains('speak');
 
   void _voiceNextQuestion() {
     final hasAnswer =
@@ -374,22 +409,44 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   void _playQuestionAudio(QuizQuestion question, {bool forcePlay = false}) {
     if (_ttsController.isPlaying && !forcePlay) {
       _ttsController.stop();
+      setState(() {
+        _highlightStart = 0;
+        _highlightEnd = 0;
+      });
     } else {
       if (_ttsController.isPlaying) _ttsController.stop();
+      setState(() {
+        _highlightStart = 0;
+        _highlightEnd = 0;
+        _questionOffsetStart = 0;
+        _questionOffsetEnd = 0;
+        _optionOffsetStarts.clear();
+        _optionOffsetEnds.clear();
+      });
+
       final buffer = StringBuffer();
       
       buffer.write('Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}. ');
+      
+      _questionOffsetStart = buffer.length;
       buffer.write(question.ttsReadout ?? question.text);
+      _questionOffsetEnd = buffer.length;
 
       final type = question.type.toUpperCase().replaceAll('-', '_');
       if (type == 'MULTIPLE_CHOICE' && question.options != null) {
         buffer.write(' Your options are: ');
         for (int i = 0; i < question.options!.length; i++) {
           final letter = String.fromCharCode(65 + i);
-          buffer.write('Option $letter: ${question.options![i]}. ');
+          buffer.write('Option $letter: ');
+          _optionOffsetStarts.add(buffer.length);
+          buffer.write(question.options![i]);
+          _optionOffsetEnds.add(buffer.length);
+          buffer.write('. ');
         }
       } else if (type == 'TRUE_FALSE') {
         buffer.write(' Is this true or false?');
+        _optionOffsetStarts.add(_questionOffsetStart); // Provide dummy fallback if needed, or handle specially
+        _optionOffsetEnds.add(_questionOffsetStart);
       }
       
       buffer.write(' Tap the microphone button at the bottom to answer.');
@@ -401,6 +458,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   // ─── Navigation & Submit ────────────────────────────────────────────────────
 
   void _nextQuestion() {
+    setState(() {
+      _highlightStart = 0;
+      _highlightEnd = 0;
+    });
     if (_currentQuestionIndex < widget.quiz.questions.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -412,6 +473,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   void _previousQuestion() {
+    setState(() {
+      _highlightStart = 0;
+      _highlightEnd = 0;
+    });
     if (_currentQuestionIndex > 0) {
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
@@ -503,59 +568,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   // ─── Accessibility Settings ─────────────────────────────────────────────────
 
   void _showAccessibilitySettings() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLg)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(AppDimensions.stackLg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Accessibility Settings',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: AppDimensions.stackLg),
-                  Row(
-                    children: [
-                      const Icon(Icons.text_format),
-                      const SizedBox(width: AppDimensions.stackMd),
-                      const Text('Text Size'),
-                      Expanded(
-                        child: Slider(
-                          value: _fontScaleMultiplier,
-                          min: 1.0,
-                          max: 2.5,
-                          divisions: 6,
-                          label: '${_fontScaleMultiplier.toStringAsFixed(1)}x',
-                          onChanged: (val) {
-                            setModalState(() => _fontScaleMultiplier = val);
-                            setState(() => _fontScaleMultiplier = val);
-                          },
-                        ),
-                      ),
-                      Text('${_fontScaleMultiplier.toStringAsFixed(1)}x',
-                          style:
-                              const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.stackLg),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+    showDisplaySettingsBottomSheet(context);
   }
 
   String get _formattedTime {
@@ -601,12 +614,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppDimensions.stackMd),
                     child: Center(
-                      child: Text(
-                        _formattedTime,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              _timeRemainingSeconds < 60 ? Colors.red : null,
+                      child: Semantics(
+                        label: 'Time remaining: $_formattedTime',
+                        child: Text(
+                          _formattedTime,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                _timeRemainingSeconds < 60 ? Colors.red : null,
+                          ),
                         ),
                       ),
                     ),
@@ -617,6 +633,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         children: [
           LinearProgressIndicator(
             value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
+            semanticsLabel: 'Quiz progress',
+            semanticsValue: '${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}',
           ),
           // Show what the mic is hearing at the top if listening
           Consumer(
@@ -660,7 +678,40 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _buildCenterMicButton(),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: IconButton(
+              iconSize: 32,
+              onPressed: () => _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]),
+              icon: Icon(
+                _ttsController.isPlaying
+                    ? Icons.stop_circle
+                    : Icons.play_circle_fill,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: _ttsController.isPlaying ? 'Stop' : 'Play',
+            ),
+          ),
+          const SizedBox(width: 16),
+          _buildCenterMicButton(),
+        ],
+      ),
     );
   }
 
@@ -685,29 +736,34 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               child: SizedBox(
                 width: 80,
                 height: 80,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    // Stop any reading TTS so the mic isn't confused
-                    if (_ttsController.isPlaying) {
-                      _ttsController.stop();
-                    }
-                    if (isListening) {
-                      ref.read(quizVoiceControllerProvider.notifier).stopListening();
-                    } else {
-                      ref.read(quizVoiceControllerProvider.notifier).startListening(
-                        onResult: _handleVoiceInput,
-                      );
-                    }
-                  },
-                  backgroundColor: isListening 
-                      ? Colors.red 
-                      : Theme.of(context).colorScheme.primary,
-                  elevation: isListening ? 8 : 4,
-                  shape: const CircleBorder(),
-                  child: Icon(
-                    isListening ? Icons.mic : Icons.mic_none,
-                    size: 40,
-                    color: Colors.white,
+                child: Semantics(
+                  button: true,
+                  label: isListening ? 'Stop Voice Input' : 'Start Voice Input',
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      // Stop any reading TTS so the mic isn't confused
+                      if (_ttsController.isPlaying) {
+                        _ttsController.stop();
+                      }
+                      if (isListening) {
+                        ref.read(quizVoiceControllerProvider.notifier).stopListening();
+                      } else {
+                        ref.read(quizVoiceControllerProvider.notifier).startListening(
+                          onResult: _handleVoiceInput,
+                        );
+                      }
+                    },
+                    backgroundColor: isListening 
+                        ? Colors.red 
+                        : Theme.of(context).colorScheme.primary,
+                    elevation: isListening ? 8 : 4,
+                    tooltip: isListening ? 'Stop Voice Input' : 'Start Voice Input',
+                    shape: const CircleBorder(),
+                    child: Icon(
+                      isListening ? Icons.mic : Icons.mic_none,
+                      size: 40,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -748,30 +804,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             ],
           ),
           const SizedBox(height: AppDimensions.stackMd),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  question.text,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textScaler: TextScaler.linear(_fontScaleMultiplier),
-                ),
-              ),
-              IconButton(
-                onPressed: () => _playQuestionAudio(question),
-                icon: Icon(
-                  _ttsController.isPlaying
-                      ? Icons.stop_circle
-                      : Icons.play_circle_fill,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 36 * _fontScaleMultiplier,
-                ),
-                tooltip: _ttsController.isPlaying
-                    ? 'Stop Audio'
-                    : 'Read Question Aloud',
-              ),
-            ],
+          _buildHighlightedText(
+            question.text,
+            Theme.of(context).textTheme.headlineSmall ?? const TextStyle(),
+            _questionOffsetStart,
+            _questionOffsetEnd,
           ),
           if (question.altText != null && question.altText!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.stackSm),
@@ -809,6 +846,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               isSelected: isSelected,
               fontScaleMultiplier: _fontScaleMultiplier,
               onTap: () => setState(() => _selectedAnswers[index] = optionText),
+              highlightStartOffset: optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
+              highlightEndOffset: optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
+              highlightStartGlobal: _highlightStart,
+              highlightEndGlobal: _highlightEnd,
             ),
           );
         }),
@@ -816,38 +857,45 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     } else if (type == 'TRUE_FALSE') {
       return Column(
         children: [
-          _buildTrueFalseButton(index, answer, 'True'),
+          _buildTrueFalseButton(index, answer, 'True', 0),
           const SizedBox(height: AppDimensions.stackMd),
-          _buildTrueFalseButton(index, answer, 'False'),
+          _buildTrueFalseButton(index, answer, 'False', 1),
         ],
       );
     } else {
-      return TextField(
-        controller: TextEditingController(text: answer)
-          ..selection = TextSelection.collapsed(offset: answer.length),
-        onChanged: (val) => _selectedAnswers[index] = val,
-        style: TextStyle(fontSize: 16 * _fontScaleMultiplier),
-        decoration: InputDecoration(
-          border: const OutlineInputBorder(borderSide: BorderSide(width: 2)),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary, width: 3),
+      return Semantics(
+        label: 'Short answer input',
+        child: TextField(
+          controller: TextEditingController(text: answer)
+            ..selection = TextSelection.collapsed(offset: answer.length),
+          onChanged: (val) => _selectedAnswers[index] = val,
+          style: TextStyle(fontSize: 16 * _fontScaleMultiplier),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(borderSide: BorderSide(width: 2)),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 3),
+            ),
+            hintText: 'Type your answer here...',
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            contentPadding: EdgeInsets.all(16 * _fontScaleMultiplier),
           ),
-          hintText: 'Type your answer here...',
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          contentPadding: EdgeInsets.all(16 * _fontScaleMultiplier),
+          maxLines: question.type == 'short-answer' ? 3 : 1,
         ),
-        maxLines: question.type == 'short-answer' ? 3 : 1,
       );
     }
   }
 
   Widget _buildTrueFalseButton(
-      int questionIndex, String currentAnswer, String value) {
+      int questionIndex, String currentAnswer, String value, int optIndex) {
     final isSelected = currentAnswer == value;
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: 'Answer choice: $value',
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
         backgroundColor: isSelected
             ? Theme.of(context).colorScheme.primaryContainer
             : Theme.of(context).colorScheme.surface,
@@ -874,16 +922,62 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             size: 24 * _fontScaleMultiplier,
           ),
           SizedBox(width: 12 * _fontScaleMultiplier),
-          Text(
+          _buildHighlightedText(
             value,
-            style: TextStyle(
+            TextStyle(
               color: isSelected
                   ? Theme.of(context).colorScheme.onPrimaryContainer
                   : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-            textScaler: TextScaler.linear(_fontScaleMultiplier),
+            optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
+            optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
           ),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildHighlightedText(
+      String text, TextStyle baseStyle, int localStart, int localEnd) {
+    // No highlight: range is unset, or the global highlight doesn't overlap this text window
+    final bool notActive = _highlightEnd <= _highlightStart ||
+        _highlightEnd <= localStart ||
+        _highlightStart >= localEnd ||
+        (localStart == 0 && localEnd == 0);
+    if (notActive) {
+      return Text(text,
+          style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+    }
+
+    final int startHighlight =
+        (_highlightStart - localStart).clamp(0, text.length);
+    final int endHighlight = (_highlightEnd - localStart).clamp(0, text.length);
+
+    if (startHighlight >= endHighlight) {
+      return Text(text,
+          style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+    }
+
+    final beforeText = text.substring(0, startHighlight);
+    final activeWord = text.substring(startHighlight, endHighlight);
+    final afterText = text.substring(endHighlight);
+
+    return RichText(
+      textScaler: TextScaler.linear(_fontScaleMultiplier),
+      text: TextSpan(
+        style: baseStyle,
+        children: [
+          TextSpan(text: beforeText),
+          TextSpan(
+            text: activeWord,
+            style: baseStyle.copyWith(
+              color: Colors.black,
+              backgroundColor: const Color(0xFFFDE047),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          TextSpan(text: afterText),
         ],
       ),
     );
@@ -909,10 +1003,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             onPressed:
                 hasAnsweredCurrent && !_isSubmitting ? _nextQuestion : null,
             child: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                ? Semantics(
+                    label: 'Submitting quiz',
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
                 : Text(isLastQuestion ? 'Submit Quiz' : 'Next'),
           ),
         ],
@@ -929,6 +1026,10 @@ class _OptionButton extends StatefulWidget {
   final bool isSelected;
   final double fontScaleMultiplier;
   final VoidCallback onTap;
+  final int highlightStartOffset;
+  final int highlightEndOffset;
+  final int highlightStartGlobal;
+  final int highlightEndGlobal;
 
   const _OptionButton({
     required this.letter,
@@ -936,6 +1037,10 @@ class _OptionButton extends StatefulWidget {
     required this.isSelected,
     required this.fontScaleMultiplier,
     required this.onTap,
+    this.highlightStartOffset = 0,
+    this.highlightEndOffset = 0,
+    this.highlightStartGlobal = 0,
+    this.highlightEndGlobal = 0,
   });
 
   @override
@@ -990,8 +1095,12 @@ class _OptionButtonState extends State<_OptionButton>
               : theme.colorScheme.surface;
         }
 
-        return OutlinedButton(
-          style: OutlinedButton.styleFrom(
+        return Semantics(
+          button: true,
+          selected: widget.isSelected,
+          label: 'Answer choice: ${widget.text}',
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
             backgroundColor: bgColor,
             side: BorderSide(
               color: widget.isSelected
@@ -1030,9 +1139,9 @@ class _OptionButtonState extends State<_OptionButton>
               ),
               SizedBox(width: 12 * widget.fontScaleMultiplier),
               Expanded(
-                child: Text(
+                child: _buildOptionHighlightedText(
                   widget.text,
-                  style: TextStyle(
+                  TextStyle(
                     color: widget.isSelected
                         ? theme.colorScheme.onPrimaryContainer
                         : theme.colorScheme.onSurface,
@@ -1040,7 +1149,6 @@ class _OptionButtonState extends State<_OptionButton>
                         ? FontWeight.bold
                         : FontWeight.normal,
                   ),
-                  textScaler: TextScaler.linear(widget.fontScaleMultiplier),
                 ),
               ),
               if (widget.isSelected)
@@ -1051,8 +1159,52 @@ class _OptionButtonState extends State<_OptionButton>
                 ),
             ],
           ),
-        );
+        ));
       },
+    );
+  }
+
+  Widget _buildOptionHighlightedText(String text, TextStyle baseStyle) {
+    final bool notActive = widget.highlightEndGlobal <= widget.highlightStartGlobal ||
+        widget.highlightEndGlobal <= widget.highlightStartOffset ||
+        widget.highlightStartGlobal >= widget.highlightEndOffset ||
+        (widget.highlightStartOffset == 0 && widget.highlightEndOffset == 0);
+    if (notActive) {
+      return Text(text,
+          style: baseStyle, textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+    }
+
+    final int startHighlight =
+        (widget.highlightStartGlobal - widget.highlightStartOffset).clamp(0, text.length);
+    final int endHighlight =
+        (widget.highlightEndGlobal - widget.highlightStartOffset).clamp(0, text.length);
+
+    if (startHighlight >= endHighlight) {
+      return Text(text,
+          style: baseStyle, textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+    }
+
+    final beforeText = text.substring(0, startHighlight);
+    final activeWord = text.substring(startHighlight, endHighlight);
+    final afterText = text.substring(endHighlight);
+
+    return RichText(
+      textScaler: TextScaler.linear(widget.fontScaleMultiplier),
+      text: TextSpan(
+        style: baseStyle,
+        children: [
+          TextSpan(text: beforeText),
+          TextSpan(
+            text: activeWord,
+            style: baseStyle.copyWith(
+              color: Colors.black,
+              backgroundColor: const Color(0xFFFDE047),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          TextSpan(text: afterText),
+        ],
+      ),
     );
   }
 }

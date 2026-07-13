@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inclusive_ed_student/shared/models/course.dart';
+import 'package:opencampus_lms/shared/models/course.dart';
+
 
 void main() {
   group('Course Model Tests', () {

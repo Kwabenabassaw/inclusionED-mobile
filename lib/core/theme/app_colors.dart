@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Light Theme Colors (from Cognitive Clarity Design System)
-  static const Color surface = Color(0xFFFBF8FF);
+  static const Color surface = Color(0xFFF9FAFB);
   static const Color surfaceDim = Color(0xFFDBD9E1);
-  static const Color surfaceBright = Color(0xFFFBF8FF);
+  static const Color surfaceBright = Color(0xFFF9FAFB);
   static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
   static const Color surfaceContainerLow = Color(0xFFF5F2FA);
   static const Color surfaceContainer = Color(0xFFEFEDF5);
@@ -41,7 +41,7 @@ class AppColors {
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
   
-  static const Color background = Color(0xFFFBF8FF);
+  static const Color background = Color(0xFFF9FAFB);
   static const Color onBackground = Color(0xFF1B1B21);
   static const Color surfaceVariant = Color(0xFFE3E1E9);
 
@@ -80,14 +80,14 @@ const ColorScheme lightColorScheme = ColorScheme(
 
 const ColorScheme darkColorScheme = ColorScheme(
   brightness: Brightness.dark,
-  primary: Color(0xFFBAC3FF),
-  onPrimary: Color(0xFF0F2275),
-  primaryContainer: Color(0xFF29398C),
-  onPrimaryContainer: Color(0xFFDEE0FF),
-  secondary: Color(0xFFB5C8E1),
-  onSecondary: Color(0xFF203243),
-  secondaryContainer: Color(0xFF37485A),
-  onSecondaryContainer: Color(0xFFD2E4FB),
+  primary: Color(0xFF818CF8), // Indigo-400
+  onPrimary: Color(0xFFFFFFFF),
+  primaryContainer: Color(0xFF3730A3), // Indigo-800
+  onPrimaryContainer: Color(0xFFE0E7FF), // Indigo-100
+  secondary: Color(0xFF94A3B8), // Slate-400
+  onSecondary: Color(0xFF0F172A), // Slate-900
+  secondaryContainer: Color(0xFF334155), // Slate-700
+  onSecondaryContainer: Color(0xFFF1F5F9), // Slate-100
   tertiary: Color(0xFFC7C7C3),
   onTertiary: Color(0xFF2B2B2A),
   tertiaryContainer: Color(0xFF424240),
@@ -96,14 +96,14 @@ const ColorScheme darkColorScheme = ColorScheme(
   onError: Color(0xFF690005),
   errorContainer: Color(0xFF93000A),
   onErrorContainer: Color(0xFFFFDAD6),
-  surface: Color(0xFF131316),
-  onSurface: Color(0xFFE4E2E8),
-  surfaceContainerHighest: Color(0xFF35343A),
-  onSurfaceVariant: Color(0xFFC7C5CE),
-  outline: Color(0xFF918F9A),
-  outlineVariant: Color(0xFF46464F),
-  inverseSurface: Color(0xFFE4E2E8),
-  onInverseSurface: Color(0xFF303036),
+  surface: Color(0xFF0F172A), // Premium Slate-900 Background
+  onSurface: Color(0xFFF8FAFC), // Slate-50 Text
+  surfaceContainerHighest: Color(0xFF1E293B), // Slate-800 Cards
+  onSurfaceVariant: Color(0xFFCBD5E1), // Slate-300 Subtitles
+  outline: Color(0xFF64748B), // Slate-500
+  outlineVariant: Color(0xFF334155), // Slate-700
+  inverseSurface: Color(0xFFF8FAFC),
+  onInverseSurface: Color(0xFF0F172A),
   inversePrimary: AppColors.primary,
 );
 
@@ -125,7 +125,7 @@ const ColorScheme highContrastLightColorScheme = ColorScheme(
   onError: Color(0xFFFFFFFF),
   errorContainer: Color(0xFF8C0009),
   onErrorContainer: Color(0xFFFFFFFF),
-  surface: Color(0xFFFBF8FF),
+  surface: Color(0xFFF9FAFB),
   onSurface: Color(0xFF000000),
   surfaceContainerHighest: Color(0xFFE3E1E9),
   onSurfaceVariant: Color(0xFF23242E),

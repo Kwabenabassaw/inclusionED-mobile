@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/authentication/presentation/auth_controller.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/authentication/presentation/auth_controller.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -144,17 +144,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isHighContrast ? Colors.yellow.withOpacity(0.1) : Theme.of(context).colorScheme.primaryContainer,
+                     
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isHighContrast ? Colors.yellow : Colors.transparent,
-                        width: 2,
-                      ),
+                     
                     ),
-                    child: Icon(
-                      Icons.school_outlined,
-                      size: 40 * settings.textScale,
-                      color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                    child: Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 100 * settings.textScale,
+                      height: 100 * settings.textScale,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -427,6 +425,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ],
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account? ",
+                          style: TextStyle(
+                            color: isHighContrast ? Colors.white70 : Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontFamily: settings.fontFamily,
+                          ),
+                          textScaler: TextScaler.linear(settings.textScale),
+                        ),
+                        Semantics(
+                          button: true,
+                          label: 'Register or sign up',
+                          child: GestureDetector(
+                            onTap: () => context.go('/signup'),
+                            child: Text(
+                              'Sign up',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                                fontFamily: settings.fontFamily,
+                              ),
+                              textScaler: TextScaler.linear(settings.textScale),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

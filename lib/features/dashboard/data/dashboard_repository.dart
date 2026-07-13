@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
-import 'package:inclusive_ed_student/shared/models/announcement.dart';
-import 'package:inclusive_ed_student/shared/models/calendar_event.dart';
+
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/shared/models/announcement.dart';
+import 'package:opencampus_lms/shared/models/calendar_event.dart';
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepository(

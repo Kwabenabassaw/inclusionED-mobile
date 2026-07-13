@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inclusive_ed_student/core/theme/app_dimensions.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -73,14 +73,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     )
                   else
                     const SizedBox(width: 48),
-                  Text(
-                    'InclusiveEd',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
-                      fontSize: 16 * settings.textScale,
-                      fontFamily: settings.fontFamily,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(
+                          'assets/images/app_icon.png',
+                          width: 24 * settings.textScale,
+                          height: 24 * settings.textScale,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(width: 8 * settings.textScale),
+                      Text(
+                        'OpenCampus LMS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                          fontSize: 16 * settings.textScale,
+                          fontFamily: settings.fontFamily,
+                        ),
+                      ),
+                    ],
                   ),
                   TextButton(
                     onPressed: _skip,
@@ -258,7 +273,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Icon(
                 icon,
                 size: 80 * settings.textScale,
-                color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+
               ),
             ),
           ),

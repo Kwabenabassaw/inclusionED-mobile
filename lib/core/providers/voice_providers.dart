@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/core/services/voice/speech_engine.dart';
-import 'package:inclusive_ed_student/core/services/voice/native_speech_engine.dart';
-import 'package:inclusive_ed_student/core/services/intent/command_interpreter.dart';
-import 'package:inclusive_ed_student/features/assistant/presentation/voice_action_handler.dart';
-import 'package:inclusive_ed_student/features/modules/presentation/components/playback_controller.dart';
-import 'package:inclusive_ed_student/features/accessibility/unified_tts_controller.dart';
-import 'package:inclusive_ed_student/features/accessibility/data/accessibility_provider.dart';
-import 'package:inclusive_ed_student/core/providers/voice_overlay_controller.dart';
+import 'package:opencampus_lms/core/providers/voice_overlay_controller.dart';
+import 'package:opencampus_lms/core/services/intent/command_interpreter.dart';
+import 'package:opencampus_lms/core/services/voice/native_speech_engine.dart';
+import 'package:opencampus_lms/core/services/voice/speech_engine.dart';
+import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
+import 'package:opencampus_lms/features/accessibility/unified_tts_controller.dart';
+import 'package:opencampus_lms/features/assistant/presentation/voice_action_handler.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
 
 final fuzzyCommandInterpreterProvider = Provider<CommandInterpreter>((ref) {
   return CommandInterpreter();

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:inclusive_ed_student/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
 
 class AuthState {
   final bool isLoading;
