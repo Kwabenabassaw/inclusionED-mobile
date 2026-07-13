@@ -1,0 +1,31 @@
+tests:
+- displayName: Login as student
+  id: login-as-student
+  steps:
+  - goal: Log in using an existing student account
+    hint: Tap the email field, enter student@example.com, enter a password, and tap the Login button.
+    finalScreenAssertion: The "My Courses" or Home screen is visible.
+
+- displayName: View course details
+  prerequisiteTestCaseId: login-as-student
+  steps:
+  - goal: Open a course from the available list
+    hint: Look for a course card in the main list (like "Introduction to Math") and tap on it.
+    finalScreenAssertion: >-
+      The course details screen is opened, showing the course title, description, and the curriculum list.
+
+- displayName: Start a learning module
+  prerequisiteTestCaseId: login-as-student
+  steps:
+  - goal: Open a course and start learning
+    hint: Tap on any course from the home screen, then tap the "Start" or "Continue" button, or select the first lesson from the curriculum.
+    finalScreenAssertion: >-
+      The lesson reader screen is visible, showing the educational content or audio player.
+
+- displayName: Adjust accessibility settings
+  prerequisiteTestCaseId: login-as-student
+  steps:
+  - goal: Navigate to the profile and open accessibility settings
+    hint: Tap the "Profile" or "Settings" icon in the bottom navigation bar, then find and tap the "Accessibility" option.
+    finalScreenAssertion: >-
+      The accessibility settings screen is visible, showing options for Text Size, Contrast, or Text-to-Speech.
