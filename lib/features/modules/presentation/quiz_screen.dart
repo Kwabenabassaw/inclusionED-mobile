@@ -429,7 +429,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       buffer.write('Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}. ');
       
       _questionOffsetStart = buffer.length;
-      buffer.write(question.ttsReadout ?? question.text);
+      buffer.write(question.text);
       _questionOffsetEnd = buffer.length;
 
       final type = question.type.toUpperCase().replaceAll('-', '_');
@@ -807,8 +807,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           _buildHighlightedText(
             question.text,
             Theme.of(context).textTheme.headlineSmall ?? const TextStyle(),
-            _questionOffsetStart,
-            _questionOffsetEnd,
+            index == _currentQuestionIndex ? _questionOffsetStart : 0,
+            index == _currentQuestionIndex ? _questionOffsetEnd : 0,
           ),
           if (question.altText != null && question.altText!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.stackSm),
@@ -846,8 +846,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               isSelected: isSelected,
               fontScaleMultiplier: _fontScaleMultiplier,
               onTap: () => setState(() => _selectedAnswers[index] = optionText),
-              highlightStartOffset: optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
-              highlightEndOffset: optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
+              highlightStartOffset: (index == _currentQuestionIndex && optIndex < _optionOffsetStarts.length) ? _optionOffsetStarts[optIndex] : 0,
+              highlightEndOffset: (index == _currentQuestionIndex && optIndex < _optionOffsetEnds.length) ? _optionOffsetEnds[optIndex] : 0,
               highlightStartGlobal: _highlightStart,
               highlightEndGlobal: _highlightEnd,
             ),
@@ -930,8 +930,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                   : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-            optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
-            optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
+            (questionIndex == _currentQuestionIndex && optIndex < _optionOffsetStarts.length) ? _optionOffsetStarts[optIndex] : 0,
+            (questionIndex == _currentQuestionIndex && optIndex < _optionOffsetEnds.length) ? _optionOffsetEnds[optIndex] : 0,
           ),
         ],
       ),
