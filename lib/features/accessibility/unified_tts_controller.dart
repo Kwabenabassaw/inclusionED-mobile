@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 enum TtsEngineType { inbuilt }
 
@@ -14,9 +15,11 @@ class UnifiedTtsController extends ChangeNotifier {
       'https://qczgiqusaftwmdtkvctn.supabase.co/functions/v1';
   final Dio _dio = Dio();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FlutterTts _flutterTts = FlutterTts();
 
   final TtsEngineType _activeEngine = TtsEngineType.inbuilt;
   bool _isPlaying = false;
+  bool _isUsingNativeFallback = false;
 
   double _rate = 1.0;
   double _pitch = 1.0;
@@ -44,18 +47,21 @@ class UnifiedTtsController extends ChangeNotifier {
   Future<void> setRate(double value) async {
     _rate = value;
     await _player.setSpeed(value);
+    await _flutterTts.setSpeechRate(value * 0.5); // FlutterTts scale is roughly 0.5x of just_audio
     notifyListeners();
   }
 
   Future<void> setPitch(double value) async {
     _pitch = value;
     await _player.setPitch(value);
+    await _flutterTts.setPitch(value);
     notifyListeners();
   }
 
   Future<void> setVolume(double value) async {
     _volume = value;
     await _player.setVolume(value);
+    await _flutterTts.setVolume(value);
     notifyListeners();
   }
 
@@ -115,6 +121,17 @@ class UnifiedTtsController extends ChangeNotifier {
       }
     });
 
+    _flutterTts.setCompletionHandler(() {
+      _simulationTimer?.cancel();
+      _setPlayingState(false);
+    });
+
+    _flutterTts.setProgressHandler((String text, int start, int end, String word) {
+      if (_isPlaying && _isUsingNativeFallback) {
+        onProgressUpdate?.call(start, end);
+      }
+    });
+
     notifyListeners();
   }
 
@@ -162,7 +179,7 @@ class UnifiedTtsController extends ChangeNotifier {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        if (speakId == _currentSpeakId) _setPlayingState(false);
+        await _fallbackToNative(text, speakId);
         return;
       }
 
@@ -185,7 +202,7 @@ class UnifiedTtsController extends ChangeNotifier {
       if (speakId != _currentSpeakId) return;
 
       if (response.statusCode != 200) {
-        if (speakId == _currentSpeakId) _setPlayingState(false);
+        await _fallbackToNative(text, speakId);
         return;
       }
 
@@ -278,9 +295,21 @@ class UnifiedTtsController extends ChangeNotifier {
     } catch (e) {
       debugPrint('UnifiedTtsController error: $e');
       if (speakId == _currentSpeakId) {
-        _simulationTimer?.cancel();
-        _setPlayingState(false);
+        await _fallbackToNative(text, speakId);
       }
+    }
+  }
+
+  Future<void> _fallbackToNative(String text, int speakId) async {
+    debugPrint('UnifiedTtsController: Falling back to native FlutterTts');
+    _isUsingNativeFallback = true;
+    await _flutterTts.setLanguage("en-US");
+    await _flutterTts.setSpeechRate(_rate * 0.5);
+    await _flutterTts.setVolume(_volume);
+    await _flutterTts.setPitch(_pitch);
+    
+    if (speakId == _currentSpeakId) {
+      await _flutterTts.speak(text);
     }
   }
 
@@ -288,12 +317,14 @@ class UnifiedTtsController extends ChangeNotifier {
     _currentSpeakId++;
     _simulationTimer?.cancel();
     await _player.stop();
+    await _flutterTts.stop();
     _setPlayingState(false);
   }
 
   void _setPlayingState(bool state) {
     _isPlaying = state;
     if (!state) {
+      _isUsingNativeFallback = false;
       _simulationTimer?.cancel();
       onProgressUpdate?.call(0, 0);
     }
