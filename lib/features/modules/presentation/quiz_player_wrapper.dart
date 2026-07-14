@@ -21,18 +21,28 @@ class QuizPlayerWrapper extends ConsumerWidget {
       data: (quiz) {
         if (quiz == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Quiz Not Found')),
-            body: const Center(child: Text('This quiz could not be loaded.')),
+            appBar: AppBar(title: Text('Quiz Not Found')),
+            body: Center(
+              child: Semantics(
+                label: 'This quiz could not be loaded.',
+                child: Text('This quiz could not be loaded.'),
+              ),
+            ),
           );
         }
         return QuizScreen(courseId: courseId, quiz: quiz);
       },
-      loading: () => const Scaffold(
+      loading: () => Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, st) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: Center(child: Text('Failed to load quiz: $e')),
+        appBar: AppBar(title: Text('Error')),
+        body: Center(
+          child: Semantics(
+            label: 'Failed to load quiz: $e',
+            child: Text('Failed to load quiz: $e'),
+          ),
+        ),
       ),
     );
   }

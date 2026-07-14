@@ -38,7 +38,7 @@ class ScheduleOverview extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppDimensions.stackMd),
+        SizedBox(height: AppDimensions.stackMd),
         upcomingEventsAsync.when(
           data: (events) {
             if (events.isEmpty) {
@@ -84,7 +84,7 @@ class ScheduleOverview extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: AppDimensions.stackMd),
+                              SizedBox(width: AppDimensions.stackMd),
                               // Title and Subtitle
                               Expanded(
                                 child: Column(
@@ -97,7 +97,7 @@ class ScheduleOverview extends ConsumerWidget {
                                         height: 1.3,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Text(
                                       event.type.toUpperCase(),
                                       style: theme.textTheme.labelSmall?.copyWith(
@@ -108,7 +108,7 @@ class ScheduleOverview extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: AppDimensions.stackSm),
+                              SizedBox(width: AppDimensions.stackSm),
                               // Time Badge
                               Container(
                                 width: 56,
@@ -130,15 +130,15 @@ class ScheduleOverview extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppDimensions.stackLg),
+                          SizedBox(height: AppDimensions.stackLg),
                           // Action Buttons
                           Row(
                             children: [
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () => context.go('/calendar'),
-                                  icon: const Icon(Icons.calendar_month, size: 18),
-                                  label: const Text('View Calendar'),
+                                  icon: Icon(Icons.calendar_month, size: 18),
+                                  label: Text('View Calendar'),
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     shape: RoundedRectangleBorder(
@@ -156,7 +156,7 @@ class ScheduleOverview extends ConsumerWidget {
                 ),
               );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(child: CircularProgressIndicator()),
           error: (err, stack) => Center(child: Text('Error: $err')),
         ),
       ],
@@ -173,7 +173,7 @@ class ScheduleOverview extends ConsumerWidget {
         child: Column(
           children: [
             Icon(Icons.calendar_today_outlined, size: 36, color: theme.colorScheme.secondary),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'No class events scheduled for today.',
               textAlign: TextAlign.center,

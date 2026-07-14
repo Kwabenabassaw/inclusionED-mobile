@@ -55,8 +55,9 @@ class _SpeakOnTapState extends ConsumerState<SpeakOnTap> {
   Widget build(BuildContext context) {
     final isEnabled = ref.watch(accessibilityProvider.select((s) => s.screenReaderEnabled));
 
-    if (!isEnabled) {
-      // If screen reader is off, just wrap with Semantics for native OS screen readers
+    if (isEnabled) {
+      // OS screen reader (TalkBack/VoiceOver) is active — defer to it.
+      // Only provide Semantics labels; do NOT fire app-native TTS.
       return Semantics(
         label: widget.textToSpeak,
         child: widget.child,

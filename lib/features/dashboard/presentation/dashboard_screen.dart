@@ -6,7 +6,6 @@ import 'package:opencampus_lms/features/dashboard/presentation/components/schedu
 import 'package:opencampus_lms/features/dashboard/presentation/components/active_learning_card.dart';
 import 'package:opencampus_lms/features/dashboard/presentation/components/current_courses_list.dart';
 
-import 'package:go_router/go_router.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});

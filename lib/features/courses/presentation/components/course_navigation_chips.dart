@@ -31,16 +31,19 @@ class CourseNavigationChips extends StatelessWidget {
           final isSelected = section == selectedSection;
           return Padding(
             padding: const EdgeInsets.only(right: AppDimensions.stackSm),
-            child: ChoiceChip(
-              label: Text(section),
-              selected: isSelected,
-              onSelected: (_) => onSectionSelected(section),
-              selectedColor: Theme.of(context).colorScheme.primaryContainer,
-              labelStyle: TextStyle(
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.onPrimaryContainer
-                    : Theme.of(context).colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            child: Semantics(
+              button: true,
+              child: ChoiceChip(
+                label: Text(section),
+                selected: isSelected,
+                onSelected: (_) => onSectionSelected(section),
+                selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                labelStyle: TextStyle(
+                  color: isSelected 
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
           );

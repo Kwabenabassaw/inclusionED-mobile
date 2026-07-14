@@ -157,8 +157,8 @@ class CourseRepository {
         'itemId': itemId,
         'type': type,
         'status': status,
-        if (timeSpentSeconds != null) 'timeSpentSeconds': timeSpentSeconds,
-        if (readingPercentage != null) 'readingPercentage': readingPercentage,
+        'timeSpentSeconds': ?timeSpentSeconds,
+        'readingPercentage': ?readingPercentage,
       };
 
       // Implementation using http package (imported at top)
@@ -180,8 +180,8 @@ class CourseRepository {
         'itemId': itemId,
         'type': type,
         'status': status,
-        if (timeSpentSeconds != null) 'timeSpentSeconds': timeSpentSeconds,
-        if (readingPercentage != null) 'readingPercentage': readingPercentage,
+        'timeSpentSeconds': ?timeSpentSeconds,
+        'readingPercentage': ?readingPercentage,
       };
       _offlineSync.queueLearningEvent(fallbackBody);
     }
@@ -258,4 +258,15 @@ final completedCoursesProvider = FutureProvider<List<Course>>((ref) async {
 final courseProvider = FutureProvider.family<Course?, String>((ref, courseId) async {
   final repository = ref.watch(courseRepositoryProvider);
   return repository.fetchCourseById(courseId);
+});
+
+final courseStudentCountProvider = FutureProvider.family<int, String>((ref, courseId) async {
+  final query = FirebaseFirestore.instance
+      .collection('enrollments')
+      .where('courseId', isEqualTo: courseId)
+      .where('status', isEqualTo: 'ACTIVE')
+      .count();
+      
+  final snapshot = await query.get();
+  return snapshot.count ?? 0;
 });

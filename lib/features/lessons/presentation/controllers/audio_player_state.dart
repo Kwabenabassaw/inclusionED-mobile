@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 
 class AudioPlayerState {
-  final bool isPlaying;
+  final PlaybackState playbackState;
   final bool isLoading;
   final Duration position;
   final Duration duration;
@@ -11,7 +11,7 @@ class AudioPlayerState {
   final String? error;
 
   const AudioPlayerState({
-    this.isPlaying = false,
+    this.playbackState = PlaybackState.idle,
     this.isLoading = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
@@ -22,7 +22,7 @@ class AudioPlayerState {
   });
 
   AudioPlayerState copyWith({
-    bool? isPlaying,
+    PlaybackState? playbackState,
     bool? isLoading,
     Duration? position,
     Duration? duration,
@@ -34,7 +34,7 @@ class AudioPlayerState {
     bool clearError = false,
   }) {
     return AudioPlayerState(
-      isPlaying: isPlaying ?? this.isPlaying,
+      playbackState: playbackState ?? this.playbackState,
       isLoading: isLoading ?? this.isLoading,
       position: position ?? this.position,
       duration: duration ?? this.duration,

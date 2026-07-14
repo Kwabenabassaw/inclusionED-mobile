@@ -116,7 +116,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Assistant'),
+        title: Text('AI Assistant'),
       ),
       body: Column(
         children: [
@@ -164,9 +164,9 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
-                const SizedBox(width: AppDimensions.stackSm),
+                SizedBox(width: AppDimensions.stackSm),
                 if (_isProcessing)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(8.0),
                     child: CircularProgressIndicator(),
                   )
@@ -178,7 +178,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     tooltip: 'Voice Commands',
                   ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: Icon(Icons.send),
                   color: Theme.of(context).colorScheme.primary,
                   onPressed: _sendMessage,
                 ),

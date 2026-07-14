@@ -26,7 +26,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
               'Display Settings',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Consumer(
               builder: (context, ref, child) {
                 final settings = ref.watch(accessibilityProvider);
@@ -38,7 +38,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                   children: [
                     // Font Size Slider
                     Text('Text Size', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(Icons.text_decrease, color: theme.colorScheme.onSurfaceVariant),
@@ -59,7 +59,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                         Icon(Icons.text_increase, color: theme.colorScheme.onSurfaceVariant),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Bold Text Toggle
                     SwitchListTile(
@@ -68,7 +68,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                       onChanged: (val) => notifier.toggleBoldText(),
                       contentPadding: EdgeInsets.zero,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     // Line Spacing
                     Text('Line Spacing', style: theme.textTheme.titleMedium),
@@ -92,11 +92,11 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                         Text('${settings.lineSpacing.toStringAsFixed(1)}x', style: theme.textTheme.bodyMedium),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Font Style (Family)
                     Text('Font Style', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -107,11 +107,11 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                         _buildFontChip('Dyslexic', 'OpenDyslexic', settings.fontFamily, notifier),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Font Color (High Contrast / Themes)
                     Text('Color Theme', style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Row(
                       children: [
                         _buildColorThemeCard(
@@ -124,7 +124,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                             if (settings.darkMode) notifier.toggleDarkMode();
                           },
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildColorThemeCard(
                           title: 'Dark',
                           bgColor: const Color(0xFF1E1E1E),
@@ -135,7 +135,7 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                             if (!settings.darkMode) notifier.toggleDarkMode();
                           },
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildColorThemeCard(
                           title: 'Contrast',
                           bgColor: Colors.black,

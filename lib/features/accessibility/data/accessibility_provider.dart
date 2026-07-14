@@ -133,6 +133,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
       touchTargetMargin: prefs.getDouble('touchTargetMargin') ?? 0.0,
       defaultToStt: prefs.getBool('defaultToStt') ?? false,
       voiceCommandPersistent: prefs.getBool('voiceCommandPersistent') ?? false,
+      screenReaderEnabled: prefs.getBool('screenReaderEnabled') ?? false,
       ttsEngine: prefs.getString('ttsEngine') ?? 'polly',
       pollySpeed: prefs.getDouble('pollySpeed') ?? 1.0,
       pollyPitch: prefs.getDouble('pollyPitch') ?? 1.0,
@@ -162,6 +163,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
     await prefs.setDouble('touchTargetMargin', newSettings.touchTargetMargin);
     await prefs.setBool('defaultToStt', newSettings.defaultToStt);
     await prefs.setBool('voiceCommandPersistent', newSettings.voiceCommandPersistent);
+    await prefs.setBool('screenReaderEnabled', newSettings.screenReaderEnabled);
     await prefs.setString('ttsEngine', newSettings.ttsEngine);
     await prefs.setDouble('pollySpeed', newSettings.pollySpeed);
     await prefs.setDouble('pollyPitch', newSettings.pollyPitch);

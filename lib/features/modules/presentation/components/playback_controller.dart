@@ -1,21 +1,16 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:opencampus_lms/features/lessons/data/tts_repository.dart';
 import 'package:opencampus_lms/features/lessons/data/audio_cache_service.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
-import 'dart:io' show Platform;
+import 'package:dio/dio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-enum PlaybackState {
-  idle,
-  speaking,
-  pausedByUser,
-  restartingForSettings,
-  stoppedForNavigation
-}
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 
 class PlaybackData {
   final PlaybackState state;
@@ -24,6 +19,7 @@ class PlaybackData {
   final int highlightEnd;
   final int playOffset;
   final String voice;
+  final String? errorMessage;
 
   const PlaybackData({
     this.state = PlaybackState.idle,
@@ -32,6 +28,7 @@ class PlaybackData {
     this.highlightEnd = 0,
     this.playOffset = 0,
     this.voice = 'Joanna',
+    this.errorMessage,
   });
 
   PlaybackData copyWith({
@@ -41,6 +38,8 @@ class PlaybackData {
     int? highlightEnd,
     int? playOffset,
     String? voice,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return PlaybackData(
       state: state ?? this.state,
@@ -49,6 +48,7 @@ class PlaybackData {
       highlightEnd: highlightEnd ?? this.highlightEnd,
       playOffset: playOffset ?? this.playOffset,
       voice: voice ?? this.voice,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -61,7 +61,7 @@ class PlaybackController extends Notifier<PlaybackData> {
   final AudioPlayer _player = AudioPlayer();
   final FlutterTts _flutterTts = FlutterTts();
   // Raw Polly Speech Marks — indexed against the SSML/speechText
-  List<Map<String, dynamic>> _speechMarks = [];
+  final List<Map<String, dynamic>> _speechMarks = [];
   // Alignment map — translates speech token index → displayText char range
   List<Map<String, dynamic>> _alignmentMap = [];
   StreamSubscription? _positionSubscription;
@@ -186,8 +186,13 @@ class PlaybackController extends Notifier<PlaybackData> {
   }
 
   Future<void> playOrResume(String fullText) async {
-    final strippedText = _stripMarkdown(fullText);
     final settings = ref.read(accessibilityProvider);
+
+    // If the user's OS screen reader (TalkBack/VoiceOver) is active, suppress
+    // all app-native narration to prevent double-narration.
+    if (settings.screenReaderEnabled) return;
+
+    final strippedText = _stripMarkdown(fullText);
     final voice = settings.ttsEngine == 'native' ? settings.nativeVoice : settings.pollyVoice;
 
     if (state.currentTextToSpeak.isEmpty || state.currentTextToSpeak != strippedText || state.voice != voice) {
@@ -200,7 +205,10 @@ class PlaybackController extends Notifier<PlaybackData> {
       );
     }
 
-    state = state.copyWith(state: PlaybackState.speaking);
+    state = state.copyWith(
+      state: PlaybackState.speaking,
+      clearError: true,
+    );
     await _applyEngineSettings();
     
     final ttsEngine = settings.ttsEngine;
@@ -215,26 +223,65 @@ class PlaybackController extends Notifier<PlaybackData> {
       }
       
       final cacheKey = 'screen_reader_${textToSpeak.hashCode}_$voice';
-      
-      String? localPath = await _cache.getCachedFilePath(cacheKey);
-      String? speechMarksJson = await _cache.getCachedSpeechMarksString(cacheKey);
-      String? alignmentJson = await _cache.getCachedAlignmentString(cacheKey);
+      String speechMarksJson;
+      String alignmentJson;
 
-      if (localPath == null || speechMarksJson == null || alignmentJson == null) {
+      if (kIsWeb) {
+        // ── Web path ──────────────────────────────────────────────────────────
+        // flutter_cache_manager writes to dart:io File, which doesn't exist on
+        // web. just_audio's web backend also rejects setFilePath(). Instead:
+        //   • stream audio directly from the signed Supabase URL via setUrl()
+        //   • fetch JSON payloads over HTTP with Dio (no file I/O needed)
         final urls = await _ttsRepo.getLessonAudioUrl(
-          lessonId: cacheKey, 
+          lessonId: cacheKey,
           text: textToSpeak.length > 3000 ? textToSpeak.substring(0, 3000) : textToSpeak,
-          voice: voice, 
+          voice: voice,
         );
-        localPath = await _cache.getCachedAudioPath(urls.audioUrl, cacheKey);
-        speechMarksJson = await _cache.getCachedSpeechMarks(urls.marksUrl, cacheKey);
-        alignmentJson = await _cache.getCachedAlignment(urls.alignmentUrl, cacheKey);
+
+        // Fetch speech marks and alignment via HTTP
+        final dio = Dio();
+        final marksRes = await dio.get<String>(
+          urls.marksUrl,
+          options: Options(responseType: ResponseType.plain),
+        );
+        final alignRes = await dio.get<String>(
+          urls.alignmentUrl,
+          options: Options(responseType: ResponseType.plain),
+        );
+
+        speechMarksJson = marksRes.data ?? '';
+        alignmentJson = alignRes.data ?? '';
+
+        // Stream audio directly — no local file involved
+        await _player.setUrl(urls.audioUrl);
+      } else {
+        // ── Native (iOS / Android) path ───────────────────────────────────────
+        // Download to local cache first; setFilePath() is faster for large files
+        // and avoids re-downloading the same audio on repeated plays.
+        String? localPath = await _cache.getCachedFilePath(cacheKey);
+        String? cachedMarks = await _cache.getCachedSpeechMarksString(cacheKey);
+        String? cachedAlign = await _cache.getCachedAlignmentString(cacheKey);
+
+        if (localPath == null || cachedMarks == null || cachedAlign == null) {
+          final urls = await _ttsRepo.getLessonAudioUrl(
+            lessonId: cacheKey,
+            text: textToSpeak.length > 3000 ? textToSpeak.substring(0, 3000) : textToSpeak,
+            voice: voice,
+          );
+          localPath = await _cache.getCachedAudioPath(urls.audioUrl, cacheKey);
+          cachedMarks = await _cache.getCachedSpeechMarks(urls.marksUrl, cacheKey);
+          cachedAlign = await _cache.getCachedAlignment(urls.alignmentUrl, cacheKey);
+        }
+
+        speechMarksJson = cachedMarks;
+        alignmentJson = cachedAlign;
+
+        await _player.setFilePath(localPath);
       }
-      
-      // Parse Polly Speech Marks (JSON lines format)
+
+      // ── Shared: parse speech marks + alignment, then play ─────────────────
       _speechMarks.clear();
-      final lines = speechMarksJson.split('\n');
-      for (var line in lines) {
+      for (var line in speechMarksJson.split('\n')) {
         if (line.trim().isNotEmpty) {
           try {
             _speechMarks.add(jsonDecode(line));
@@ -242,21 +289,20 @@ class PlaybackController extends Notifier<PlaybackData> {
         }
       }
 
-      // Parse alignment map (JSON array)
       _alignmentMap.clear();
       try {
         final decoded = jsonDecode(alignmentJson) as List<dynamic>;
         _alignmentMap = decoded.map((e) => e as Map<String, dynamic>).toList();
       } catch (_) {
-        // If parsing fails, fall back to raw speech mark offsets
         debugPrint('PlaybackController: Failed to parse alignment map; falling back to raw offsets.');
       }
-      
-      await _player.setFilePath(localPath);
+
       await _player.play();
     } catch (e) {
       debugPrint('Error playing TTS: $e');
-      state = const PlaybackData();
+      state = const PlaybackData(
+        errorMessage: 'Failed to play audio. Please check your connection.',
+      );
     }
   }
 
@@ -266,6 +312,8 @@ class PlaybackController extends Notifier<PlaybackData> {
     state = state.copyWith(
       state: PlaybackState.pausedByUser,
       playOffset: state.highlightStart,
+      highlightStart: 0,
+      highlightEnd: 0,
     );
 
     final ttsEngine = ref.read(accessibilityProvider).ttsEngine;
@@ -316,20 +364,7 @@ class PlaybackController extends Notifier<PlaybackData> {
   Future<void> changeSettingsAndResume() async {
     final ttsEngine = ref.read(accessibilityProvider).ttsEngine;
     
-    if (ttsEngine == 'native') {
-      if (state.state == PlaybackState.speaking) {
-        state = state.copyWith(
-          state: PlaybackState.restartingForSettings,
-          playOffset: state.highlightStart,
-        );
-        await _flutterTts.stop();
-        await playOrResume(state.currentTextToSpeak);
-      } else {
-        await _applyEngineSettings();
-      }
-    } else {
-      await _applyEngineSettings();
-    }
+    await _applyEngineSettings();
   }
 
   Future<void> setVoice(String newVoice) async {
@@ -363,7 +398,11 @@ class PlaybackController extends Notifier<PlaybackData> {
   Future<void> stopForNavigation() async {
     if (state.state == PlaybackState.stoppedForNavigation || state.state == PlaybackState.idle) return;
 
-    state = state.copyWith(state: PlaybackState.stoppedForNavigation);
+    state = state.copyWith(
+      state: PlaybackState.stoppedForNavigation,
+      highlightStart: 0,
+      highlightEnd: 0,
+    );
     
     final ttsEngine = ref.read(accessibilityProvider).ttsEngine;
     if (ttsEngine == 'native') {

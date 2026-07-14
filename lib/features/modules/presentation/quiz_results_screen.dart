@@ -50,7 +50,7 @@ class QuizResultsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Quiz Results'),
+        title: Text('Quiz Results'),
         automaticallyImplyLeading: false,
         centerTitle: true,
         elevation: 0,
@@ -118,7 +118,7 @@ class QuizResultsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppDimensions.stackLg),
+                        SizedBox(height: AppDimensions.stackLg),
                         Text(
                           isPassed ? 'Congratulations! You Passed' : 'Keep Learning!',
                           style: theme.textTheme.titleLarge?.copyWith(
@@ -127,7 +127,7 @@ class QuizResultsScreen extends StatelessWidget {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: AppDimensions.stackSm),
+                        SizedBox(height: AppDimensions.stackSm),
                         Text(
                           'You correctly answered $correctCount out of ${quiz.questions.length} questions.',
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -140,7 +140,7 @@ class QuizResultsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimensions.stackLg),
+              SizedBox(height: AppDimensions.stackLg),
               
               // --- REVIEW SECTION HEADER ---
               Text(
@@ -149,7 +149,7 @@ class QuizResultsScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: AppDimensions.stackMd),
+              SizedBox(height: AppDimensions.stackMd),
 
               // --- ANSWERS LIST ---
               ...List.generate(quiz.questions.length, (index) {
@@ -201,7 +201,7 @@ class QuizResultsScreen extends StatelessWidget {
                                       color: isCorrect ? Colors.green.shade800 : Colors.red.shade800,
                                       size: 18,
                                     ),
-                                    const SizedBox(width: 6),
+                                    SizedBox(width: 6),
                                     Text(
                                       isCorrect ? 'CORRECT' : 'INCORRECT',
                                       style: theme.textTheme.labelLarge?.copyWith(
@@ -222,7 +222,7 @@ class QuizResultsScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: AppDimensions.stackMd),
+                          SizedBox(height: AppDimensions.stackMd),
                           
                           // Question Number & Text
                           Text(
@@ -232,14 +232,14 @@ class QuizResultsScreen extends StatelessWidget {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             q.text,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: AppDimensions.stackMd),
+                          SizedBox(height: AppDimensions.stackMd),
                           
                           // Student Answer Box
                           Text(
@@ -249,7 +249,7 @@ class QuizResultsScreen extends StatelessWidget {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -276,7 +276,7 @@ class QuizResultsScreen extends StatelessWidget {
                           
                           // Correct Answer Box (if incorrect)
                           if (!isCorrect) ...[
-                            const SizedBox(height: AppDimensions.stackMd),
+                            SizedBox(height: AppDimensions.stackMd),
                             Text(
                               'Correct Answer:',
                               style: theme.textTheme.bodyMedium?.copyWith(
@@ -284,7 +284,7 @@ class QuizResultsScreen extends StatelessWidget {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            SizedBox(height: 6),
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
@@ -310,7 +310,7 @@ class QuizResultsScreen extends StatelessWidget {
                           
                           // Explanation Container
                           if (q.explanation != null && q.explanation!.isNotEmpty) ...[
-                            const SizedBox(height: AppDimensions.stackMd),
+                            SizedBox(height: AppDimensions.stackMd),
                             Container(
                               padding: const EdgeInsets.all(AppDimensions.stackMd),
                               decoration: BoxDecoration(
@@ -323,12 +323,12 @@ class QuizResultsScreen extends StatelessWidget {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.lightbulb_rounded,
                                     size: 22,
                                     color: Colors.amber,
                                   ),
-                                  const SizedBox(width: AppDimensions.stackSm),
+                                  SizedBox(width: AppDimensions.stackSm),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,7 +340,7 @@ class QuizResultsScreen extends StatelessWidget {
                                             color: theme.colorScheme.onSurface,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        SizedBox(height: 4),
                                         Text(
                                           q.explanation!,
                                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -361,7 +361,7 @@ class QuizResultsScreen extends StatelessWidget {
                   ),
                 );
               }),
-              const SizedBox(height: AppDimensions.stackLg),
+              SizedBox(height: AppDimensions.stackLg),
               
               // --- RETURN BUTTON ---
               ElevatedButton(
@@ -385,7 +385,7 @@ class QuizResultsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimensions.stackLg),
+              SizedBox(height: AppDimensions.stackLg),
             ],
           ),
         ),

@@ -8,10 +8,16 @@ import 'package:opencampus_lms/core/routing/app_router.dart';
 import 'package:opencampus_lms/core/theme/app_theme.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/firebase_options.dart';
+import 'package:responsive_scaler/responsive_scaler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  ResponsiveScaler.init(
+    designWidth: 375,
+    designHeight: 812,
+  );
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -36,12 +42,10 @@ void main() async {
     // If Hive fails, we continue without offline caching instead of crashing.
   }
   final prefs = await SharedPreferences.getInstance();
-  
+
   runApp(
     ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const InclusiveEdStudentApp(),
     ),
   );
@@ -57,6 +61,7 @@ class InclusiveEdStudentApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'OpenCampus LMS',
+
       theme: AppTheme.getTheme(accessibilitySettings),
       builder: (context, child) {
         return MediaQuery(
@@ -64,7 +69,15 @@ class InclusiveEdStudentApp extends ConsumerWidget {
             textScaler: TextScaler.linear(accessibilitySettings.textScale),
             boldText: accessibilitySettings.highContrast,
           ),
-          child: child!,
+          child: Builder(
+            builder: (contextWithMediaQuery) {
+              return ResponsiveScaler.scale(
+                context: contextWithMediaQuery,
+                child: child!,
+                useMaxAccessibility: true,
+              );
+            },
+          ),
         );
       },
       routerConfig: goRouter,

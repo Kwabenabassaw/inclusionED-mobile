@@ -41,7 +41,7 @@ class NotificationsScreen extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all),
+            icon: Icon(Icons.done_all),
             tooltip: 'Mark all as read',
             onPressed: () async {
               final user = auth.currentUser;
@@ -89,7 +89,7 @@ class NotificationsScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -109,12 +109,12 @@ class NotificationsScreen extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.notifications_off_outlined, size: 48, color: theme.colorScheme.secondary),
-            const SizedBox(height: AppDimensions.stackMd),
+            SizedBox(height: AppDimensions.stackMd),
             Text(
               'All Caught Up',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               'No new notifications at this moment.',
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -222,11 +222,11 @@ class _NotificationCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.stackMd),
+                  SizedBox(width: AppDimensions.stackMd),
                   
                   Semantics(
                     label: notification.read ? 'Read' : 'Unread',
-                    child: const SizedBox.shrink(),
+                    child: SizedBox.shrink(),
                   ),
 
                   // Details
@@ -260,14 +260,14 @@ class _NotificationCard extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Text(
                           notification.title,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: notification.read ? FontWeight.w600 : FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           notification.body,
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -280,7 +280,7 @@ class _NotificationCard extends ConsumerWidget {
                   
                   // Unread dot
                   if (!notification.read) ...[
-                    const SizedBox(width: AppDimensions.stackSm),
+                    SizedBox(width: AppDimensions.stackSm),
                     ExcludeSemantics(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 8.0),

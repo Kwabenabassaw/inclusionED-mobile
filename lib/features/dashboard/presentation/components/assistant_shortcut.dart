@@ -21,7 +21,7 @@ class AssistantShortcut extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSecondaryContainer,
                 size: 32,
               ),
-              const SizedBox(width: AppDimensions.stackMd),
+              SizedBox(width: AppDimensions.stackMd),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,7 +32,7 @@ class AssistantShortcut extends StatelessWidget {
                             color: Theme.of(context).colorScheme.onSecondaryContainer,
                           ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       'Need help? Ask your personalized assistant.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(

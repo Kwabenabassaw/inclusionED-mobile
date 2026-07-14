@@ -136,7 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Semantics(
                 image: true,
                 label: 'InclusiveEd Logo',
@@ -157,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Text(
                 'Welcome Back',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -169,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textScaler: TextScaler.linear(settings.textScale),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Sign in to continue your personalized learning journey.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -180,7 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textScaler: TextScaler.linear(settings.textScale),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Container(
                 decoration: BoxDecoration(
                   color: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
@@ -203,7 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       textScaler: TextScaler.linear(settings.textScale),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Semantics(
                       textField: true,
                       label: 'Enter email address',
@@ -235,7 +235,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         textInputAction: TextInputAction.next,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Text(
                       'Password',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -245,7 +245,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       textScaler: TextScaler.linear(settings.textScale),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Semantics(
                       textField: true,
                       label: 'Enter password',
@@ -278,7 +278,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onFieldSubmitted: (_) => _handleSignIn(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     if (authState.errorMessage != null) ...[
                       Semantics(
                         liveRegion: true,
@@ -292,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Row(
                             children: [
                               Icon(Icons.warning_amber_rounded, color: isHighContrast ? Colors.redAccent : Theme.of(context).colorScheme.error),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Error: ${authState.errorMessage}',
@@ -308,7 +308,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                     ],
                     Semantics(
                       button: true,
@@ -340,7 +340,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(child: Divider(color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant)),
@@ -359,7 +359,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Expanded(child: Divider(color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant)),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     Semantics(
                       button: true,
                       label: 'Sign in with Google',
@@ -392,7 +392,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     if (_canCheckBiometrics) ...[
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Semantics(
                         button: true,
                         label: 'Sign in with Biometrics (Face ID or Touch ID)',
@@ -425,7 +425,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -458,7 +458,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
             ],
           ),
         ),

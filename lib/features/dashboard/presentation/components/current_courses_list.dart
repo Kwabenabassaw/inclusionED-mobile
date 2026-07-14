@@ -28,11 +28,11 @@ class CurrentCoursesList extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () => context.go('/courses'),
-              child: const Text('View All'),
+              child: Text('View All'),
             ),
           ],
         ),
-        const SizedBox(height: AppDimensions.stackSm),
+        SizedBox(height: AppDimensions.stackSm),
         SizedBox(
           height: 240, // Increased height to fit cover images nicely
           child: activeCoursesAsync.when(
@@ -43,14 +43,15 @@ class CurrentCoursesList extends ConsumerWidget {
               return ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: courses.length,
-                separatorBuilder: (context, index) => const SizedBox(width: AppDimensions.stackMd),
+                separatorBuilder: (context, index) =>
+                    SizedBox(width: AppDimensions.stackMd),
                 itemBuilder: (context, index) {
                   final course = courses[index];
                   return _buildCourseCard(context, course);
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => Center(child: CircularProgressIndicator()),
             error: (err, stack) => Center(child: Text('Error: $err')),
           ),
         ),
@@ -64,8 +65,12 @@ class CurrentCoursesList extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.book_outlined, size: 36, color: theme.colorScheme.secondary),
-          const SizedBox(height: 8),
+          Icon(
+            Icons.book_outlined,
+            size: 36,
+            color: theme.colorScheme.secondary,
+          ),
+          SizedBox(height: 8),
           Text(
             'No active enrollments.',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -79,29 +84,32 @@ class CurrentCoursesList extends ConsumerWidget {
 
   Widget _buildCourseCard(BuildContext context, Course course) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       width: 200,
       child: GlassCard(
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
-      child: MergeSemantics(
-        child: InkWell(
-          onTap: () => context.go('/courses/${course.id}'),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-                  // Course Cover Image
+        child: MergeSemantics(
+          child: InkWell(
+            onTap: () => context.go('/courses/${course.id}'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Course Cover Image
                 Expanded(
                   flex: 5,
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: course.imageUrl != null && course.imageUrl!.isNotEmpty
+                        child:
+                            course.imageUrl != null &&
+                                course.imageUrl!.isNotEmpty
                             ? Image.network(
                                 course.imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _buildPlaceholderCover(context),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildPlaceholderCover(context),
                               )
                             : _buildPlaceholderCover(context),
                       ),
@@ -110,10 +118,16 @@ class CurrentCoursesList extends ConsumerWidget {
                         top: 8,
                         right: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.95),
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                            color: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.95),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusSm,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -123,7 +137,7 @@ class CurrentCoursesList extends ConsumerWidget {
                                 size: 12,
                                 color: theme.colorScheme.onPrimaryContainer,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Semantics(
                                 label: 'Accessibility Score',
                                 child: Text(
@@ -156,7 +170,7 @@ class CurrentCoursesList extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           course.name,
                           style: theme.textTheme.titleMedium?.copyWith(
@@ -167,31 +181,40 @@ class CurrentCoursesList extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const Spacer(),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.groups_outlined,
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${course.studentsCount} students',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final countAsync = ref.watch(courseStudentCountProvider(course.id));
+                            // Fallback to the model's static count (0) while loading
+                            final count = countAsync.asData?.value ?? course.studentsCount;
+                            
+                            return Row(
+                              children: [
+                                Icon(
+                                  Icons.groups_outlined,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  '$count students',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
                 ),
-                ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildPlaceholderCover(BuildContext context) {

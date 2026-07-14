@@ -31,6 +31,7 @@ class AuthRepository {
   }
 
   Future<void> _initGoogleSignIn() async {
+    if (kIsWeb) return; // Skip google_sign_in package initialization on web
     try {
       await _googleSignIn.initialize(
         serverClientId: '632665830727-6brseqmfih7f4vhbdrmk0n2t0b88tu6j.apps.googleusercontent.com',
@@ -83,16 +84,23 @@ class AuthRepository {
   }
 
   Future<void> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate();
-    if (googleUser == null) return; // User canceled the sign-in
+    User? user;
 
-    final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-    final AuthCredential credential = GoogleAuthProvider.credential(
-      idToken: googleAuth.idToken,
-    );
+    if (kIsWeb) {
+      final googleProvider = GoogleAuthProvider();
+      final UserCredential userCredential = await _auth.signInWithPopup(googleProvider);
+      user = userCredential.user;
+    } else {
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(); // User canceled the sign-in
 
-    final UserCredential userCredential = await _auth.signInWithCredential(credential);
-    final user = userCredential.user;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      user = userCredential.user;
+    }
 
     if (user != null) {
       // Check if profile exists
@@ -129,7 +137,9 @@ class AuthRepository {
 
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      if (!kIsWeb) {
+        await _googleSignIn.signOut();
+      }
     } catch (_) {}
     await _auth.signOut();
   }

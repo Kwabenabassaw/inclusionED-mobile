@@ -25,7 +25,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: Icon(Icons.close),
           onPressed: () => context.pop(),
           tooltip: 'Close PDF',
         ),
@@ -37,14 +37,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark),
+            icon: Icon(Icons.bookmark),
             onPressed: () {
               _pdfViewerKey.currentState?.openBookmarkView();
             },
             tooltip: 'Bookmarks',
           ),
           IconButton(
-            icon: const Icon(Icons.zoom_in),
+            icon: Icon(Icons.zoom_in),
             onPressed: () {
               // Zoom logic could be added here, though SfPdfViewer supports pinch-to-zoom
             },

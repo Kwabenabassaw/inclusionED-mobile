@@ -103,9 +103,9 @@ class _MyCoursesTab extends ConsumerWidget {
           child: Row(
             children: [
               _buildFilterChip(context, ref, 'ACTIVE', 'Active Studies', Icons.auto_stories),
-              const SizedBox(width: AppDimensions.stackMd),
+              SizedBox(width: AppDimensions.stackMd),
               _buildFilterChip(context, ref, 'PENDING', 'Pending Request', Icons.hourglass_empty),
-              const SizedBox(width: AppDimensions.stackMd),
+              SizedBox(width: AppDimensions.stackMd),
               _buildFilterChip(context, ref, 'COMPLETED', 'Completed', Icons.task_alt),
             ],
           ),
@@ -135,7 +135,7 @@ class _MyCoursesTab extends ConsumerWidget {
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => Center(child: CircularProgressIndicator()),
             error: (e, st) => Center(child: Text('Error: $e')),
           ),
         ),
@@ -183,7 +183,7 @@ class _MyCoursesTab extends ConsumerWidget {
               size: 16, 
               color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
@@ -213,22 +213,26 @@ class _MyCoursesTab extends ConsumerWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.marginPage),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.school_outlined, size: 48, color: theme.colorScheme.secondary),
-            const SizedBox(height: AppDimensions.stackMd),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: AppDimensions.stackSm),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
+        child: Semantics(
+          label: '$title. $description',
+          excludeSemantics: true,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school_outlined, size: 48, color: theme.colorScheme.secondary),
+              SizedBox(height: AppDimensions.stackMd),
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: AppDimensions.stackSm),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -248,20 +252,24 @@ class _CatalogTab extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(AppDimensions.marginPage),
-          child: TextField(
-            onChanged: (value) => ref.read(catalogSearchQueryProvider.notifier).state = value,
-            decoration: InputDecoration(
-              hintText: 'Search course code or title...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+          child: Semantics(
+            label: 'Search course code or title',
+            textField: true,
+            child: TextField(
+              onChanged: (value) => ref.read(catalogSearchQueryProvider.notifier).state = value,
+              decoration: InputDecoration(
+                hintText: 'Search course code or title...',
+                prefixIcon: Icon(Icons.search),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                ),
               ),
             ),
           ),
@@ -270,7 +278,6 @@ class _CatalogTab extends ConsumerWidget {
           child: asyncCourses.when(
             data: (courses) {
               final filtered = courses.where((c) {
-                if (c == null) return false;
                 final matchName = c.name.toLowerCase().contains(searchQuery.toLowerCase());
                 final matchCode = c.code.toLowerCase().contains(searchQuery.toLowerCase());
                 return matchName || matchCode;
@@ -280,16 +287,20 @@ class _CatalogTab extends ConsumerWidget {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(AppDimensions.marginPage),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off, size: 48, color: theme.colorScheme.secondary),
-                        const SizedBox(height: AppDimensions.stackMd),
-                        const Text(
-                          'No courses match your search',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                    child: Semantics(
+                      label: 'No courses match your search',
+                      excludeSemantics: true,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 48, color: theme.colorScheme.secondary),
+                          SizedBox(height: AppDimensions.stackMd),
+                          Text(
+                            'No courses match your search',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -314,7 +325,7 @@ class _CatalogTab extends ConsumerWidget {
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => Center(child: CircularProgressIndicator()),
             error: (e, st) => Center(child: Text('Error: $e')),
           ),
         ),
@@ -389,7 +400,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                                 size: 14,
                                 color: theme.colorScheme.onPrimaryContainer,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Semantics(
                                 label: 'Accessibility Score: ${course.accessibilityScore}%',
                                 excludeSemantics: true,
@@ -457,7 +468,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppDimensions.stackSm),
+                        SizedBox(height: AppDimensions.stackSm),
                         Text(
                           course.name,
                           style: theme.textTheme.titleMedium?.copyWith(
@@ -465,7 +476,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                             fontSize: 18,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Text(
                           course.description,
                           maxLines: 2,
@@ -489,7 +500,7 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                 Row(
                   children: [
                     Icon(Icons.apartment, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       course.department,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -508,12 +519,12 @@ class _CourseCardState extends ConsumerState<_CourseCard> {
                       ),
                     ),
                     child: _enrolling
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Enroll'),
+                        : Text('Enroll'),
                   ),
               ],
             ),

@@ -4,8 +4,10 @@ import 'package:opencampus_lms/core/widgets/accessible_text.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/reader/providers/reader_state_provider.dart';
 import 'package:opencampus_lms/features/reader/widgets/audio_dock.dart';
-import 'package:opencampus_lms/core/services/tts_service.dart';
 import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+
+import 'package:opencampus_lms/core/utils/text_normalizer.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
 
 class AccessibleReaderScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -22,33 +24,21 @@ class AccessibleReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen> {
-  late TtsService _ttsService;
   bool _isTextSet = false;
 
   @override
   void initState() {
     super.initState();
-    _ttsService = TtsService();
-    Future.microtask(() => _initTts());
-  }
-
-  Future<void> _initTts() async {
-    final available = await _ttsService.init();
-    ref.read(readerStateProvider.notifier).setTtsAvailable(available);
-    
-    _ttsService.setProgressHandler((text, start, end, word) {
-      ref.read(readerStateProvider.notifier).updateHighlight(start, end);
-    });
-
-    _ttsService.setCompletionHandler(() {
-      ref.read(readerStateProvider.notifier).setPlaying(false);
-      ref.read(readerStateProvider.notifier).updateHighlight(0, 0);
-    });
+    // TTS engine initialisation is handled exclusively by PlaybackController.
+    // No local TtsService instance is needed.
   }
 
   @override
   void dispose() {
-    _ttsService.stop();
+    // Route all teardown through the authoritative state machine so that
+    // PlaybackController's internal FlutterTts / AudioPlayer are stopped in
+    // a consistent, tracked state.
+    ref.read(playbackControllerProvider.notifier).stopForNavigation();
     super.dispose();
   }
 
@@ -65,9 +55,10 @@ class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen>
       body: asyncContents.when(
         data: (contents) {
           if (contents.isEmpty) {
-            return const Center(child: Text('No content available.'));
+            return Center(child: Text('No content available.'));
           }
 
+          // Build the raw markdown text — this is the display text shown on screen.
           final rawText = contents.map((c) {
             if (c.contentMarkdown != null) {
               return c.contentMarkdown!;
@@ -85,13 +76,18 @@ class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen>
             return '';
           }).where((text) => text.isNotEmpty).join('\n\n');
 
-          // Clean up markdown for better TTS reading
-          final cleanText = rawText.replaceAll(RegExp(r'[#*`>]'), '').trim();
+          // Produce a TTS-friendly version (markdown stripped) and the
+          // index map that aligns clean indices back to raw positions.
+          // speechText is ONLY sent to the engine — it is never rendered.
+          final cleanText = TextNormalizer.normalizeForSpeech(rawText).cleanText;
 
-          // Set the text for TTS once when loaded
-          if (!_isTextSet && cleanText.isNotEmpty) {
+          // Populate ReaderState once when content first loads.
+          if (!_isTextSet && rawText.isNotEmpty) {
             Future.microtask(() {
-              ref.read(readerStateProvider.notifier).setText(cleanText);
+              ref.read(readerStateProvider.notifier).setText(
+                displayText: rawText,   // rendered on screen — retains markdown
+                speechText: cleanText,  // spoken by engine — markdown stripped
+              );
               if (mounted) {
                 setState(() {
                   _isTextSet = true;
@@ -100,7 +96,10 @@ class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen>
             });
           }
 
-          final text = cleanText;
+          // Render displayText (rawText) on screen so markdown formatting
+          // is preserved for sighted users. Highlight offsets are mapped
+          // back to raw positions via _textIndexMap inside PlaybackController.
+          final text = rawText;
           final int start = readerState.highlightStart;
           final int end = readerState.highlightEnd;
 
@@ -156,10 +155,10 @@ class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen>
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading content: $err')),
       ),
-      bottomNavigationBar: AudioDock(ttsService: _ttsService),
+      bottomNavigationBar: const AudioDock(),
     );
   }
 }

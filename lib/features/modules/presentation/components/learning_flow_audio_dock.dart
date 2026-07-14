@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
 import 'package:opencampus_lms/features/modules/presentation/providers/readable_text_provider.dart';
@@ -8,7 +9,8 @@ class LearningFlowAudioDock extends ConsumerStatefulWidget {
   const LearningFlowAudioDock({super.key});
 
   @override
-  ConsumerState<LearningFlowAudioDock> createState() => _LearningFlowAudioDockState();
+  ConsumerState<LearningFlowAudioDock> createState() =>
+      _LearningFlowAudioDockState();
 }
 
 class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
@@ -18,16 +20,34 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
   Widget build(BuildContext context) {
     final textToRead = ref.watch(currentReadableTextProvider);
     final playback = ref.watch(playbackControllerProvider);
+    
+    ref.listen<PlaybackData>(playbackControllerProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     final accessSettings = ref.watch(accessibilityProvider);
     final theme = Theme.of(context);
 
     // If there's no text to read, don't show the dock.
-    if (textToRead.isEmpty) return const SizedBox.shrink();
+    if (textToRead.isEmpty) return SizedBox.shrink();
 
     final isPolly = accessSettings.ttsEngine == 'polly';
-    final currentSpeed = isPolly ? accessSettings.pollySpeed : accessSettings.nativeSpeed;
-    final currentPitch = isPolly ? accessSettings.pollyPitch : accessSettings.nativePitch;
-    final currentVolume = isPolly ? accessSettings.pollyVolume : accessSettings.nativeVolume;
+    final currentSpeed = isPolly
+        ? accessSettings.pollySpeed
+        : accessSettings.nativeSpeed;
+    final currentPitch = isPolly
+        ? accessSettings.pollyPitch
+        : accessSettings.nativePitch;
+    final currentVolume = isPolly
+        ? accessSettings.pollyVolume
+        : accessSettings.nativeVolume;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -52,77 +72,122 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
         children: [
           if (!_isPanelExpanded)
             // Compact Collapsed Single Row Layout
-            Row(
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Mini Play/Pause button
-                Semantics(
-                  button: true,
-                  label: playback.state == PlaybackState.speaking ? 'Pause reading' : 'Play reading',
-                  child: IconButton(
-                    icon: Icon(
-                      playback.state == PlaybackState.speaking 
-                          ? Icons.pause_circle_filled 
-                          : Icons.play_circle_filled,
-                      size: 36,
+                // Top Row
+                Row(
+                  children: [
+                    Icon(
+                      Icons.graphic_eq,
+                      size: 20,
                       color: theme.colorScheme.primary,
                     ),
-                    onPressed: () => ref.read(playbackControllerProvider.notifier).togglePlayPause(textToRead),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        playback.state == PlaybackState.speaking ? 'Now Reading' : 'Audio Reader',
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        playback.state == PlaybackState.speaking
+                            ? 'Now Reading'
+                            : 'Audio Reader',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    // Speed Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${currentSpeed.toStringAsFixed(2).replaceAll(RegExp(r'0$'), '').replaceAll(RegExp(r'\.$'), '')}x',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        '${currentSpeed.toStringAsFixed(1)}x speed',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    SizedBox(width: 8),
+                    // Playlist Play / Expand Settings
+                    IconButton(
+                      icon: Icon(Icons.playlist_play, size: 28),
+                      color: theme.colorScheme.onSurfaceVariant,
+                      tooltip: 'Expand Settings',
+                      onPressed: () {
+                        setState(() {
+                          _isPanelExpanded = true;
+                        });
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                // Bottom Row (Controls)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Rewind 10s
+                    IconButton(
+                      icon: Icon(Icons.replay_10, size: 32),
+                      color: theme.colorScheme.onSurface,
+                      tooltip: 'Rewind 10 seconds',
+                      onPressed: () => ref
+                          .read(playbackControllerProvider.notifier)
+                          .skip(-150),
+                    ),
+                    SizedBox(width: 32),
+                    // Big Play/Pause Button
+                    Semantics(
+                      button: true,
+                      label: playback.state == PlaybackState.speaking
+                          ? 'Pause reading'
+                          : 'Play reading',
+                      child: GestureDetector(
+                        onTap: () => ref
+                            .read(playbackControllerProvider.notifier)
+                            .togglePlayPause(textToRead),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            playback.state == PlaybackState.speaking
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: theme.colorScheme.onPrimary,
+                            size: 36,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                // Skip backward 30s
-                IconButton(
-                  icon: const Icon(Icons.replay_30, size: 22),
-                  color: theme.colorScheme.primary,
-                  tooltip: 'Rewind 30 seconds',
-                  onPressed: () => ref.read(playbackControllerProvider.notifier).skip(-450),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-                // Skip forward 30s
-                IconButton(
-                  icon: const Icon(Icons.forward_30, size: 22),
-                  color: theme.colorScheme.primary,
-                  tooltip: 'Forward 30 seconds',
-                  onPressed: () => ref.read(playbackControllerProvider.notifier).skip(450),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-                // Chevron to expand settings
-                IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_up, size: 24),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  tooltip: 'Expand Settings',
-                  onPressed: () {
-                    setState(() {
-                      _isPanelExpanded = true;
-                    });
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                    ),
+                    SizedBox(width: 32),
+                    // Forward 30s
+                    IconButton(
+                      icon: Icon(Icons.forward_30, size: 32),
+                      color: theme.colorScheme.onSurface,
+                      tooltip: 'Forward 30 seconds',
+                      onPressed: () => ref
+                          .read(playbackControllerProvider.notifier)
+                          .skip(450),
+                    ),
+                  ],
                 ),
               ],
             )
@@ -130,10 +195,16 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
             // Expanded Layout
             Row(
               children: [
-                Icon(Icons.volume_up, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.volume_up,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                SizedBox(width: 8),
                 Text(
-                  playback.state == PlaybackState.speaking ? 'Now Reading' : 'Audio Reader',
+                  playback.state == PlaybackState.speaking
+                      ? 'Now Reading'
+                      : 'Audio Reader',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.bold,
@@ -142,7 +213,7 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 const Spacer(),
                 // Chevron to collapse settings
                 IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_down, size: 24),
+                  icon: Icon(Icons.keyboard_arrow_down, size: 24),
                   color: theme.colorScheme.onSurfaceVariant,
                   tooltip: 'Collapse Settings',
                   onPressed: () {
@@ -155,24 +226,29 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            
+            SizedBox(height: 8),
+
             // Media playback buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.replay_30, size: 28),
+                  icon: Icon(Icons.replay_30, size: 28),
                   color: theme.colorScheme.primary,
                   tooltip: 'Rewind 30 seconds',
-                  onPressed: () => ref.read(playbackControllerProvider.notifier).skip(-450),
+                  onPressed: () =>
+                      ref.read(playbackControllerProvider.notifier).skip(-450),
                 ),
-                const SizedBox(width: 24),
+                SizedBox(width: 24),
                 Semantics(
                   button: true,
-                  label: playback.state == PlaybackState.speaking ? 'Pause reading' : 'Play reading',
+                  label: playback.state == PlaybackState.speaking
+                      ? 'Pause reading'
+                      : 'Play reading',
                   child: GestureDetector(
-                    onTap: () => ref.read(playbackControllerProvider.notifier).togglePlayPause(textToRead),
+                    onTap: () => ref
+                        .read(playbackControllerProvider.notifier)
+                        .togglePlayPause(textToRead),
                     child: Container(
                       width: 48,
                       height: 48,
@@ -181,34 +257,39 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: Icon(
-                        playback.state == PlaybackState.speaking ? Icons.pause : Icons.play_arrow,
+                        playback.state == PlaybackState.speaking
+                            ? Icons.pause
+                            : Icons.play_arrow,
                         color: theme.colorScheme.onPrimary,
                         size: 28,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 24),
+                SizedBox(width: 24),
                 IconButton(
-                  icon: const Icon(Icons.forward_30, size: 28),
+                  icon: Icon(Icons.forward_30, size: 28),
                   color: theme.colorScheme.primary,
                   tooltip: 'Forward 30 seconds',
-                  onPressed: () => ref.read(playbackControllerProvider.notifier).skip(450),
+                  onPressed: () =>
+                      ref.read(playbackControllerProvider.notifier).skip(450),
                 ),
               ],
             ),
 
             // Settings sliders (expanded panel)
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             const Divider(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // Engine Selector
             Padding(
@@ -218,8 +299,12 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.memory, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.memory,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      SizedBox(width: 8),
                       Text("Engine", style: theme.textTheme.bodyMedium),
                     ],
                   ),
@@ -229,19 +314,38 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
                     ),
-                    underline: const SizedBox(),
-                    icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
+                    underline: SizedBox(),
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      color: theme.colorScheme.primary,
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'polly', child: Text('AWS Polly (Cloud)')),
-                      DropdownMenuItem(value: 'native', child: Text('System (Offline)')),
+                      DropdownMenuItem(
+                        value: 'polly',
+                        child: Text('AWS Polly (Cloud)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'native',
+                        child: Text('System (Offline)'),
+                      ),
                     ],
                     onChanged: (String? newEngine) async {
-                      if (newEngine != null && newEngine != accessSettings.ttsEngine) {
-                        ref.read(accessibilityProvider.notifier).setTtsEngine(newEngine);
-                        if (playback.state == PlaybackState.speaking || playback.state == PlaybackState.pausedByUser) {
-                          await ref.read(playbackControllerProvider.notifier).stopForNavigation();
-                          await Future.delayed(const Duration(milliseconds: 100));
-                          await ref.read(playbackControllerProvider.notifier).playOrResume(textToRead);
+                      if (newEngine != null &&
+                          newEngine != accessSettings.ttsEngine) {
+                        ref
+                            .read(accessibilityProvider.notifier)
+                            .setTtsEngine(newEngine);
+                        if (playback.state == PlaybackState.speaking ||
+                            playback.state == PlaybackState.pausedByUser) {
+                          await ref
+                              .read(playbackControllerProvider.notifier)
+                              .stopForNavigation();
+                          await Future.delayed(
+                            const Duration(milliseconds: 100),
+                          );
+                          await ref
+                              .read(playbackControllerProvider.notifier)
+                              .playOrResume(textToRead);
                         }
                       }
                     },
@@ -251,45 +355,79 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
             ),
 
             // Voice Selector (Only for Polly)
-            if (accessSettings.ttsEngine == 'polly') Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.record_voice_over, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 8),
-                      Text("Voice", style: theme.textTheme.bodyMedium),
-                    ],
-                  ),
-                  DropdownButton<String>(
-                    value: ref.watch(playbackControllerProvider).voice,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+            if (accessSettings.ttsEngine == 'polly')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.record_voice_over,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        SizedBox(width: 8),
+                        Text("Voice", style: theme.textTheme.bodyMedium),
+                      ],
                     ),
-                    underline: const SizedBox(),
-                    icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
-                    items: const [
-                      DropdownMenuItem(value: 'Joanna', child: Text('Joanna (Female)')),
-                      DropdownMenuItem(value: 'Salli', child: Text('Salli (Female)')),
-                      DropdownMenuItem(value: 'Matthew', child: Text('Matthew (Male)')),
-                      DropdownMenuItem(value: 'Justin', child: Text('Justin (Child)')),
-                      DropdownMenuItem(value: 'Kendra', child: Text('Kendra (Female)')),
-                      DropdownMenuItem(value: 'Joey', child: Text('Joey (Male)')),
-                      DropdownMenuItem(value: 'Ivy', child: Text('Ivy (Child)')),
-                      DropdownMenuItem(value: 'Kevin', child: Text('Kevin (Child)')),
-                    ],
-                    onChanged: (String? newVoice) {
-                      if (newVoice != null) {
-                        ref.read(playbackControllerProvider.notifier).setVoice(newVoice);
-                      }
-                    },
-                  ),
-                ],
+                    DropdownButton<String>(
+                      value: ref.watch(playbackControllerProvider).voice,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                      underline: SizedBox(),
+                      icon: Icon(
+                        Icons.arrow_drop_down,
+                        color: theme.colorScheme.primary,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Joanna',
+                          child: Text('Joanna (Female)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Salli',
+                          child: Text('Salli (Female)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Matthew',
+                          child: Text('Matthew (Male)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Justin',
+                          child: Text('Justin (Child)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Kendra',
+                          child: Text('Kendra (Female)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Joey',
+                          child: Text('Joey (Male)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Ivy',
+                          child: Text('Ivy (Child)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Kevin',
+                          child: Text('Kevin (Child)'),
+                        ),
+                      ],
+                      onChanged: (String? newVoice) {
+                        if (newVoice != null) {
+                          ref
+                              .read(playbackControllerProvider.notifier)
+                              .setVoice(newVoice);
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // Reading Speed Slider
             _buildSettingSlider(
@@ -307,7 +445,9 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 }
               },
               onChangeEnd: (val) async {
-                await ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                await ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
               formatValue: (val) => "${val.toStringAsFixed(1)}x",
             ),
@@ -328,7 +468,9 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 }
               },
               onChangeEnd: (val) async {
-                await ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                await ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
               formatValue: (val) => val.toStringAsFixed(1),
             ),
@@ -349,7 +491,9 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
                 }
               },
               onChangeEnd: (val) async {
-                await ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                await ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
               formatValue: (val) => "${(val * 100).toInt()}%",
             ),
@@ -381,8 +525,12 @@ class _LearningFlowAudioDockState extends ConsumerState<LearningFlowAudioDock> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 8),
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  SizedBox(width: 8),
                   Text(title, style: theme.textTheme.bodyMedium),
                 ],
               ),

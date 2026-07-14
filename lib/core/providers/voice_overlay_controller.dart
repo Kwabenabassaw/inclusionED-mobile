@@ -130,6 +130,7 @@ class VoiceOverlayController extends Notifier<VoiceOverlayData> {
     } catch (e) {
       debugPrint('[VoiceCmd] startListening error: $e');
       _resetToIdle();
+      rethrow;
     }
   }
 

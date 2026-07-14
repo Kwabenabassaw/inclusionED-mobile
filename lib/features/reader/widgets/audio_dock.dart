@@ -4,30 +4,36 @@ import 'package:opencampus_lms/core/widgets/accessible_button.dart';
 import 'package:opencampus_lms/core/widgets/accessible_text.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/reader/providers/reader_state_provider.dart';
-import 'package:opencampus_lms/core/services/tts_service.dart';
+import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 
-class AudioDock extends ConsumerStatefulWidget {
-  final TtsService ttsService;
-
-  const AudioDock({super.key, required this.ttsService});
+/// Audio playback dock for the Accessible Reader screen.
+///
+/// All playback operations are exclusively routed through [PlaybackController]
+/// to ensure the state machine remains consistent. [TtsService] is not used
+/// here; the controller owns the engine internally.
+class AudioDock extends ConsumerWidget {
+  const AudioDock({super.key});
 
   @override
-  ConsumerState<AudioDock> createState() => _AudioDockState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Read ttsAvailable from ReaderState (set during content load).
+    final ttsAvailable = ref.watch(readerStateProvider.select((s) => s.ttsAvailable));
 
-class _AudioDockState extends ConsumerState<AudioDock> {
-  @override
-  Widget build(BuildContext context) {
-    final readerState = ref.watch(readerStateProvider);
+    // All other playback state comes from the authoritative controller.
+    final playbackData = ref.watch(playbackControllerProvider);
+    final displayText = ref.watch(readerStateProvider.select((s) => s.displayText));
     final accessibilitySettings = ref.watch(accessibilityProvider);
 
-    if (!readerState.ttsAvailable) {
+    if (!ttsAvailable) {
       return Container(
         padding: const EdgeInsets.all(16.0),
         color: Theme.of(context).colorScheme.surface,
-        child: const AccessibleText("Audio playback is unavailable on this device."),
+        child: const AccessibleText('Audio playback is unavailable on this device.'),
       );
     }
+
+    final isSpeaking = playbackData.state == PlaybackState.speaking;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -35,31 +41,35 @@ class _AudioDockState extends ConsumerState<AudioDock> {
       child: SafeArea(
         child: Row(
           children: [
+            // Play / Pause
             AccessibleButton(
               onPressed: () {
-                if (readerState.isPlaying) {
-                  widget.ttsService.stop();
-                  ref.read(readerStateProvider.notifier).setPlaying(false);
+                if (isSpeaking) {
+                  ref.read(playbackControllerProvider.notifier).pause();
                 } else {
-                  widget.ttsService.speak(readerState.text);
-                  ref.read(readerStateProvider.notifier).setPlaying(true);
+                  // Pass displayText — PlaybackController normalises it for
+                  // the engine internally, keeping the state machine as the
+                  // sole authority over what is actually spoken.
+                  ref.read(playbackControllerProvider.notifier).playOrResume(displayText);
                 }
               },
-              label: readerState.isPlaying ? 'Pause reading aloud' : 'Play reading aloud',
-              child: Icon(readerState.isPlaying ? Icons.pause : Icons.play_arrow),
+              label: isSpeaking ? 'Pause reading aloud' : 'Play reading aloud',
+              child: Icon(isSpeaking ? Icons.pause : Icons.play_arrow),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
+
+            // Stop
             AccessibleButton(
               onPressed: () {
-                widget.ttsService.stop();
-                ref.read(readerStateProvider.notifier).setPlaying(false);
-                ref.read(readerStateProvider.notifier).updateHighlight(0, 0);
+                ref.read(playbackControllerProvider.notifier).stopForNavigation();
               },
               label: 'Stop reading aloud',
-              child: const Icon(Icons.stop),
+              child: Icon(Icons.stop),
             ),
-            const SizedBox(width: 16),
-            const AccessibleText("Speed"),
+            SizedBox(width: 16),
+
+            // Speed slider
+            const AccessibleText('Speed'),
             Expanded(
               child: Semantics(
                 slider: true,
@@ -68,11 +78,16 @@ class _AudioDockState extends ConsumerState<AudioDock> {
                 child: Slider(
                   value: accessibilitySettings.readingSpeed,
                   min: 0.5,
-                  max: 1.5,
-                  divisions: 10,
+                  max: 2.0,
+                  divisions: 15,
                   onChanged: (val) {
+                    // Persist the new speed in accessibility settings.
                     ref.read(accessibilityProvider.notifier).setReadingSpeed(val);
-                    widget.ttsService.setSpeechRate(val);
+                    // Apply to the active engine immediately so the user hears
+                    // the change without having to stop and restart playback.
+                    if (isSpeaking) {
+                      ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                    }
                   },
                 ),
               ),

@@ -35,17 +35,22 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lesson Reader'),
+        title: Text('Lesson Reader'),
       ),
       body: asyncContents.when(
         data: (contents) {
           if (contents.isEmpty) {
-            return const Center(child: Text('No content available for this module.'));
+            return Center(
+              child: Semantics(
+                label: 'No content available for this module.',
+                child: Text('No content available for this module.'),
+              ),
+            );
           }
 
           final markdownText = contents
-              .where((c) => c?.contentMarkdown != null)
-              .map((c) => c?.contentMarkdown)
+              .where((c) => c.contentMarkdown != null)
+              .map((c) => c.contentMarkdown)
               .join('\n\n');
 
           return Column(
@@ -69,8 +74,13 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error loading contents: $e')),
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (e, st) => Center(
+          child: Semantics(
+            label: 'Error loading contents: $e',
+            child: Text('Error loading contents: $e'),
+          ),
+        ),
       ),
     );
   }

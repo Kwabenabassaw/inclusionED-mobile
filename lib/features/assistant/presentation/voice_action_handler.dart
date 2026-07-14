@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:opencampus_lms/features/accessibility/unified_tts_controller.dart';
 import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
@@ -8,9 +9,11 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 import 'package:opencampus_lms/features/dashboard/data/dashboard_repository.dart';
 import 'package:opencampus_lms/features/courses/data/course_repository.dart';
 import 'package:opencampus_lms/shared/models/course.dart';
+import 'package:opencampus_lms/core/routing/app_router.dart';
+import 'package:opencampus_lms/features/modules/data/module_repository.dart';
 
 class VoiceActionHandler {
-  final PlaybackController playbackController; 
+  final PlaybackController playbackController;
   final UnifiedTtsController fallbackTts;
   final AccessibilityNotifier accessibilityController;
   final Ref ref;
@@ -22,7 +25,11 @@ class VoiceActionHandler {
     required this.ref,
   });
 
-  Future<void> handleAction(Map<String, dynamic>? actionData, BuildContext context, String screenText) async {
+  Future<void> handleAction(
+    Map<String, dynamic>? actionData,
+    BuildContext context,
+    String screenText,
+  ) async {
     if (actionData == null) {
       await fallbackTts.speak("Sorry, I didn't catch that.");
       return;
@@ -30,46 +37,46 @@ class VoiceActionHandler {
 
     switch (actionData['action']) {
       case 'login':
-        await playbackController.stopForNavigation(); 
+        await playbackController.stopForNavigation();
         if (!context.mounted) return;
-        context.go('/login'); 
+        context.go('/login');
         break;
-        
+
       case 'openDashboard':
         await fallbackTts.speak("Opening dashboard");
         await playbackController.stopForNavigation();
         if (!context.mounted) return;
         context.go('/dashboard');
         break;
-        
+
       case 'openCalendar':
         await fallbackTts.speak("Opening calendar");
         await playbackController.stopForNavigation();
         if (!context.mounted) return;
         context.go('/calendar');
         break;
-        
+
       case 'openNotifications':
         await fallbackTts.speak("Opening notifications");
         await playbackController.stopForNavigation();
         if (!context.mounted) return;
         context.go('/notifications');
         break;
-        
+
       case 'openProfile':
         await fallbackTts.speak("Opening profile");
         await playbackController.stopForNavigation();
         if (!context.mounted) return;
         context.go('/profile');
         break;
-        
+
       case 'openVoiceSettings':
         await fallbackTts.speak("Opening voice settings");
         await playbackController.stopForNavigation();
         if (!context.mounted) return;
         context.go('/profile/voice-settings');
         break;
-        
+
       case 'openSmartReader':
         await fallbackTts.speak("Opening smart audio reader");
         await playbackController.stopForNavigation();
@@ -86,12 +93,14 @@ class VoiceActionHandler {
 
       case 'openCourse':
         final rawTarget = actionData['target'].toString().toLowerCase().trim();
-        
+
         try {
           final activeCourses = await ref.read(activeCoursesProvider.future);
-          
+
           if (activeCourses.isEmpty) {
-            await fallbackTts.speak("You are not enrolled in any active courses.");
+            await fallbackTts.speak(
+              "You are not enrolled in any active courses.",
+            );
             break;
           }
 
@@ -102,7 +111,7 @@ class VoiceActionHandler {
             final nameScore = course.name.toLowerCase().similarityTo(rawTarget);
             final codeScore = course.code.toLowerCase().similarityTo(rawTarget);
             final score = nameScore > codeScore ? nameScore : codeScore;
-            
+
             if (score > highestScore) {
               highestScore = score;
               bestMatch = course;
@@ -115,7 +124,9 @@ class VoiceActionHandler {
             if (!context.mounted) return;
             context.go('/courses/${bestMatch.id}');
           } else {
-            await fallbackTts.speak("I couldn't find a course matching $rawTarget.");
+            await fallbackTts.speak(
+              "I couldn't find a course matching $rawTarget.",
+            );
           }
         } catch (e) {
           // Fallback if provider fails
@@ -126,25 +137,65 @@ class VoiceActionHandler {
           context.go('/courses/$courseId');
         }
         break;
-        
+
       case 'openWeek':
-        final weekNum = actionData['target'];
-        await fallbackTts.speak("Opening week $weekNum");
-        await playbackController.stopForNavigation();
-        if (!context.mounted) return;
-        // Uses the current course/module logic in reality. Assuming 'current' or navigating root.
-        context.go('/courses/current/modules/week-$weekNum'); 
-        break;
+        final weekNumString = actionData['target']?.toString();
+        if (weekNumString == null) {
+          await fallbackTts.speak("I didn't catch the week number.");
+          break;
+        }
         
+        final weekNum = int.tryParse(weekNumString);
+        if (weekNum == null) {
+          await fallbackTts.speak("I didn't understand the week number.");
+          break;
+        }
+
+        final goRouter = ref.read(routerProvider);
+        final location = goRouter.routerDelegate.currentConfiguration.uri.toString();
+        final match = RegExp(r'/courses/([^/]+)').firstMatch(location);
+        final courseId = match?.group(1);
+
+        if (courseId == null || courseId.isEmpty) {
+          await fallbackTts.speak("You need to open a course first before I can navigate to a specific week.");
+          break;
+        }
+
+        try {
+          final modules = await ref.read(courseModulesProvider(courseId).future);
+          if (modules.isEmpty) {
+            await fallbackTts.speak("This course doesn't have any modules yet.");
+            break;
+          }
+
+          final targetIndex = weekNum - 1;
+          if (targetIndex < 0 || targetIndex >= modules.length) {
+            await fallbackTts.speak("I couldn't find week $weekNum for this course.");
+            break;
+          }
+
+          final targetModule = modules[targetIndex];
+          
+          await fallbackTts.speak("Opening week $weekNum");
+          await playbackController.stopForNavigation();
+          if (!context.mounted) return;
+          context.go('/courses/$courseId/modules/${targetModule.id}');
+        } catch (e) {
+          await fallbackTts.speak("Sorry, I couldn't load the course modules.");
+        }
+        break;
+
       case 'readPage':
-        // Feeds directly into the existing PlaybackData state machine
-        if (screenText.isNotEmpty) {
+        // Feeds directly into the existing PlaybackData state machine.
+        // Skip if OS screen reader is active to prevent double-narration.
+        if (screenText.isNotEmpty &&
+            !ref.read(accessibilityProvider).screenReaderEnabled) {
           await playbackController.playOrResume(screenText);
-        } else {
+        } else if (!ref.read(accessibilityProvider).screenReaderEnabled) {
           await fallbackTts.speak("There is no text to read on this page.");
         }
         break;
-        
+
       case 'goBack':
         await fallbackTts.speak("Going back");
         await playbackController.stopForNavigation();
@@ -155,10 +206,10 @@ class VoiceActionHandler {
           context.go('/dashboard');
         }
         break;
-        
+
       case 'enableDarkMode':
         accessibilityController.toggleDarkMode();
-        // Since toggle just flips it, we should explicitly set it to true if we had a setter. 
+        // Since toggle just flips it, we should explicitly set it to true if we had a setter.
         // For robustness, check if it's already on:
         if (!accessibilityController.state.darkMode) {
           accessibilityController.toggleDarkMode();
@@ -209,7 +260,8 @@ class VoiceActionHandler {
         break;
 
       case 'pauseReading':
-        if (ref.read(playbackControllerProvider).state == PlaybackState.speaking) {
+        if (ref.read(playbackControllerProvider).state ==
+            PlaybackState.speaking) {
           await playbackController.pause();
           await fallbackTts.speak("Reading paused.");
         } else {
@@ -218,9 +270,11 @@ class VoiceActionHandler {
         break;
 
       case 'resumeReading':
-        if (screenText.isNotEmpty) {
+        // Skip if OS screen reader is active to prevent double-narration.
+        if (screenText.isNotEmpty &&
+            !ref.read(accessibilityProvider).screenReaderEnabled) {
           await playbackController.playOrResume(screenText);
-        } else {
+        } else if (!ref.read(accessibilityProvider).screenReaderEnabled) {
           await fallbackTts.speak("There is no text to read on this page.");
         }
         break;
@@ -251,12 +305,16 @@ class VoiceActionHandler {
         break;
 
       case 'presetVisual':
-        accessibilityController.applyPreset(AccessibilityPreset.visualImpairment);
+        accessibilityController.applyPreset(
+          AccessibilityPreset.visualImpairment,
+        );
         await fallbackTts.speak("Visual impairment mode enabled.");
         break;
 
       case 'presetMotor':
-        accessibilityController.applyPreset(AccessibilityPreset.motorDifficulty);
+        accessibilityController.applyPreset(
+          AccessibilityPreset.motorDifficulty,
+        );
         await fallbackTts.speak("Motor difficulty mode enabled.");
         break;
 
@@ -270,7 +328,11 @@ class VoiceActionHandler {
         break;
 
       case 'readScheduleTomorrow':
-        await _readSchedule(context, DateTime.now().add(const Duration(days: 1)), "tomorrow");
+        await _readSchedule(
+          context,
+          DateTime.now().add(const Duration(days: 1)),
+          "tomorrow",
+        );
         break;
 
       default:
@@ -278,20 +340,30 @@ class VoiceActionHandler {
     }
   }
 
-  Future<void> _readSchedule(BuildContext context, DateTime day, String dayName) async {
+  Future<void> _readSchedule(
+    BuildContext context,
+    DateTime day,
+    String dayName,
+  ) async {
     try {
       await fallbackTts.speak("Checking your calendar for $dayName.");
       final events = await ref.read(upcomingEventsProvider.future);
-      
+
       final dayEvents = events.where((e) {
         try {
           final date = DateTime.parse(e.startDate);
-          return date.year == day.year && date.month == day.month && date.day == day.day;
-        } catch (_) { return false; }
+          return date.year == day.year &&
+              date.month == day.month &&
+              date.day == day.day;
+        } catch (_) {
+          return false;
+        }
       }).toList();
 
       if (dayEvents.isEmpty) {
-        await fallbackTts.speak("You don't have any events scheduled for $dayName.");
+        await fallbackTts.speak(
+          "You don't have any events scheduled for $dayName.",
+        );
       } else {
         String scheduleText = "You have ${dayEvents.length} events $dayName. ";
         for (final event in dayEvents) {
@@ -302,13 +374,17 @@ class VoiceActionHandler {
         await fallbackTts.speak(scheduleText);
       }
     } catch (e) {
-      await fallbackTts.speak("Sorry, I couldn't load your calendar right now.");
+      await fallbackTts.speak(
+        "Sorry, I couldn't load your calendar right now.",
+      );
     }
   }
 
   String _formatSpeechTime(DateTime date) {
     final amPm = date.hour >= 12 ? 'PM' : 'AM';
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final hour = date.hour > 12
+        ? date.hour - 12
+        : (date.hour == 0 ? 12 : date.hour);
     final minute = date.minute;
     if (minute == 0) {
       return '$hour $amPm';

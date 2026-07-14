@@ -93,13 +93,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     return userProfileAsync.when(
       data: (userProfile) {
         if (userProfile == null) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(child: Text('User profile not found')),
           );
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'My Profile',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -114,11 +114,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       _buildProfileHeader(context, userProfile),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildTabBar(theme),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       SizedBox(
                         height: 520, // Constrain size to accommodate tab view items cleanly
                         child: TabBarView(
@@ -129,7 +129,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -138,7 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           ),
         );
       },
-      loading: () => const Scaffold(
+      loading: () => Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, st) => Scaffold(
@@ -203,168 +203,238 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
   Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
     final theme = Theme.of(context);
-    final onPrimary = theme.colorScheme.onPrimaryContainer;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primaryContainer,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withValues(alpha: 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: theme.colorScheme.surface, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 46,
-                    backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                    backgroundImage: profile.avatar.isNotEmpty ? NetworkImage(profile.avatar) : null,
-                    child: profile.avatar.isEmpty
-                        ? Icon(Icons.person, size: 46, color: theme.colorScheme.primary)
-                        : null,
-                  ),
-                ),
-                if (_isUploadingAvatar)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    ),
-                  )
-                else
-                  InkWell(
-                    onTap: () => _uploadAvatar(profile),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32, // Ensuring minimum touch target
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              profile.displayName,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: onPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              profile.email,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: onPrimary.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 20),
-            GlassCard(
-              padding: const EdgeInsets.all(12),
-              borderRadius: 16,
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 2.2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+    return Column(
+      children: [
+        // ── Avatar + Name ─────────────────────────────────────────────
+        Center(
+          child: Column(
+            children: [
+              Stack(
+                alignment: Alignment.bottomRight,
                 children: [
-                  _buildMetadataTile('Student ID', profile.studentId ?? profile.id, Icons.badge, onPrimary),
-                  _buildMetadataTile('Faculty', profile.faculty ?? 'Science', Icons.account_balance, onPrimary),
-                  _buildMetadataTile('Department', profile.department, Icons.lan, onPrimary),
-                  _buildMetadataTile('Academic Level', profile.academicLevel ?? 'Undergraduate', Icons.school, onPrimary),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.tertiary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(3),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                      backgroundImage: profile.avatar.isNotEmpty
+                          ? NetworkImage(profile.avatar)
+                          : null,
+                      child: profile.avatar.isEmpty
+                          ? Icon(Icons.person_rounded, size: 50, color: theme.colorScheme.primary)
+                          : null,
+                    ),
+                  ),
+                  if (_isUploadingAvatar)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () => _uploadAvatar(profile),
+                      child: Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.colorScheme.surface,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
                 ],
               ),
+              const SizedBox(height: 14),
+              Text(
+                profile.displayName,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                profile.email,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Student ID pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 14,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'ID: ${profile.studentId ?? profile.id.substring(0, 8).toUpperCase()}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        // ── Info Grid ─────────────────────────────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoTile(
+                theme,
+                icon: Icons.account_balance_outlined,
+                label: 'Faculty',
+                value: profile.faculty ?? 'Science',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildInfoTile(
+                theme,
+                icon: Icons.lan_outlined,
+                label: 'Department',
+                value: profile.department,
+              ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoTile(
+                theme,
+                icon: Icons.school_outlined,
+                label: 'Academic Level',
+                value: profile.academicLevel ?? 'Undergraduate',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildInfoTile(
+                theme,
+                icon: Icons.calendar_month_outlined,
+                label: 'Member Since',
+                value: _formatMemberSince(profile),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildMetadataTile(String label, String value, IconData icon, Color color) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: color.withValues(alpha: 0.7)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: color.withValues(alpha: 0.7),
-                fontSize: 10,
-              ),
+  String _formatMemberSince(UserProfile profile) {
+    try {
+      // Try parsing from createdAt if available, otherwise show current year
+      return DateTime.now().year.toString();
+    } catch (_) {
+      return '2024';
+    }
+  }
+
+  Widget _buildInfoTile(ThemeData theme, {required IconData icon, required String label, required String value}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+            child: Icon(icon, size: 16, color: theme.colorScheme.onPrimaryContainer),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -410,9 +480,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 theme: theme,
                 onChanged: (val) => notifier.toggleDarkMode(),
               ),
+              _buildSwitchTile(
+                leading: Icons.format_bold,
+                title: 'Bold Text',
+                subtitle: 'Makes all text heavier for easier reading',
+                value: settings.boldText,
+                theme: theme,
+                onChanged: (val) => notifier.toggleBoldText(),
+              ),
+              _buildInteractiveTile(
+                leading: Icons.format_line_spacing,
+                title: 'Line Spacing',
+                subtitle: '${settings.lineSpacing.toStringAsFixed(1)}x',
+                theme: theme,
+                onTap: () => _showLineSpacingBottomSheet(context, settings.lineSpacing, notifier),
+              ),
+              _buildSwitchTile(
+                leading: Icons.highlight,
+                title: 'Word Highlighting',
+                subtitle: 'Highlight words as they are read aloud',
+                value: settings.ttsHighlighting,
+                theme: theme,
+                onChanged: (val) => notifier.updateSettings(settings.copyWith(ttsHighlighting: val)),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildCategoryCard(
             title: 'Speech & Reader',
             icon: Icons.volume_up,
@@ -427,8 +520,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               ),
               _buildSwitchTile(
                 leading: Icons.touch_app,
-                title: 'In-App Screen Reader',
-                subtitle: 'Tap items to hear them read aloud',
+                title: 'System Screen Reader Mode',
+                subtitle: 'Enable when using TalkBack or VoiceOver — silences app narration to prevent double-reading',
                 value: settings.screenReaderEnabled,
                 theme: theme,
                 onChanged: (val) => notifier.toggleScreenReaderEnabled(),
@@ -469,47 +562,101 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
         children: [
           _buildCategoryCard(
             title: 'System & Security',
-            icon: Icons.shield,
+            icon: Icons.shield_outlined,
             theme: theme,
             children: [
               _buildInteractiveTile(
-                leading: Icons.notifications,
-                title: 'Notifications',
-                subtitle: 'Sound and alerts preferences',
+                leading: Icons.notifications_outlined,
+                title: 'Notification Preferences',
+                subtitle: 'Manage sound and alert settings',
                 theme: theme,
-                onTap: () {},
+                onTap: () => AppSettings.openAppSettings(type: AppSettingsType.notification),
+              ),
+              _buildInteractiveTile(
+                leading: Icons.fingerprint_rounded,
+                title: 'Biometric / Device Lock',
+                subtitle: 'Secure login with fingerprint or face',
+                theme: theme,
+                onTap: () => AppSettings.openAppSettings(type: AppSettingsType.security),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _buildCategoryCard(
             title: 'Account Settings',
-            icon: Icons.manage_accounts,
+            icon: Icons.manage_accounts_outlined,
             theme: theme,
             children: [
               _buildInteractiveTile(
-                leading: Icons.edit,
+                leading: Icons.edit_outlined,
                 title: 'Edit Profile Details',
-                subtitle: 'Change display name and information',
+                subtitle: 'Change your display name and info',
                 theme: theme,
                 onTap: () {},
               ),
               _buildInteractiveTile(
-                leading: Icons.password,
+                leading: Icons.lock_outline_rounded,
                 title: 'Change Password',
                 subtitle: 'Secure your student credentials',
                 theme: theme,
                 onTap: () {},
               ),
               ListTile(
-                leading: Icon(Icons.logout, color: theme.colorScheme.error),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  ),
+                  child: Icon(Icons.logout_rounded, color: theme.colorScheme.onErrorContainer, size: 20),
+                ),
                 title: Text(
                   'Logout',
                   style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold),
                 ),
+                subtitle: Text(
+                  'Sign out of your account',
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 12),
+                ),
+                trailing: Icon(Icons.chevron_right, size: 20, color: theme.colorScheme.error),
                 onTap: () {
                   ref.read(authRepositoryProvider).signOut();
                 },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildCategoryCard(
+            title: 'About',
+            icon: Icons.info_outline_rounded,
+            theme: theme,
+            children: [
+              _buildInteractiveTile(
+                leading: Icons.help_outline_rounded,
+                title: 'Help & Support',
+                subtitle: 'Visit our FAQ or contact support',
+                theme: theme,
+                onTap: () {},
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Icon(Icons.tag_rounded, color: theme.colorScheme.onSurfaceVariant),
+                title: Text('App Version', style: const TextStyle(fontWeight: FontWeight.w500)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                  ),
+                  child: Text(
+                    'v1.0.0',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -562,7 +709,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           leading: Icon(leading, color: theme.colorScheme.onSurfaceVariant),
           title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))),
-          trailing: const Icon(Icons.chevron_right, size: 20),
+          trailing: Icon(Icons.chevron_right, size: 20),
           onTap: onTap,
         ),
       ),
@@ -624,7 +771,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Font Family', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ...fonts.map((font) {
                 return RadioListTile<String>(
                   title: Text(
@@ -641,10 +788,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   },
                 );
               }),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
             ],
           ),
         );
+      },
+    );
+  }
+
+  void _showLineSpacingBottomSheet(BuildContext context, double currentSpacing, AccessibilityNotifier notifier) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return _LineSpacingBottomSheet(initialSpacing: currentSpacing, notifier: notifier);
       },
     );
   }
@@ -658,6 +817,91 @@ class _FontSizeBottomSheet extends StatefulWidget {
 
   @override
   State<_FontSizeBottomSheet> createState() => _FontSizeBottomSheetState();
+}
+
+class _LineSpacingBottomSheet extends StatefulWidget {
+  final double initialSpacing;
+  final AccessibilityNotifier notifier;
+
+  const _LineSpacingBottomSheet({required this.initialSpacing, required this.notifier});
+
+  @override
+  State<_LineSpacingBottomSheet> createState() => _LineSpacingBottomSheetState();
+}
+
+class _LineSpacingBottomSheetState extends State<_LineSpacingBottomSheet> {
+  late double _currentSpacing;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentSpacing = widget.initialSpacing;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Line Spacing', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('${_currentSpacing.toStringAsFixed(1)}x', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            ),
+            child: Text(
+              'This is a preview of how your reading content will be spaced. Comfortable spacing reduces eye strain and helps with reading flow.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: _currentSpacing,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Icon(Icons.density_small),
+              Expanded(
+                child: Slider(
+                  value: _currentSpacing,
+                  min: 1.0,
+                  max: 2.0,
+                  divisions: 10,
+                  onChanged: (value) {
+                    setState(() => _currentSpacing = value);
+                    widget.notifier.setLineSpacing(value);
+                  },
+                ),
+              ),
+              const Icon(Icons.density_large),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: const Text('Save & Apply'),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }
 
 class _FontSizeBottomSheetState extends State<_FontSizeBottomSheet> {
@@ -685,7 +929,7 @@ class _FontSizeBottomSheetState extends State<_FontSizeBottomSheet> {
               Text('${(_currentScale * 100).toInt()}%', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -702,10 +946,10 @@ class _FontSizeBottomSheetState extends State<_FontSizeBottomSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(
             children: [
-              const Icon(Icons.text_decrease),
+              Icon(Icons.text_decrease),
               Expanded(
                 child: Slider(
                   value: _currentScale,
@@ -718,19 +962,19 @@ class _FontSizeBottomSheetState extends State<_FontSizeBottomSheet> {
                   },
                 ),
               ),
-              const Icon(Icons.text_increase),
+              Icon(Icons.text_increase),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: const Text('Save & Apply'),
+            child: Text('Save & Apply'),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ],
       ),
     );

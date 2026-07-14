@@ -38,7 +38,12 @@ class CourseAnnouncementsTab extends ConsumerWidget {
     return asyncAnnouncements.when(
       data: (announcements) {
         if (announcements.isEmpty) {
-          return const Center(child: Text('No announcements yet.'));
+          return Center(
+            child: Semantics(
+              label: 'No announcements yet.',
+              child: Text('No announcements yet.'),
+            ),
+          );
         }
         return ListView.builder(
           shrinkWrap: true,
@@ -49,38 +54,40 @@ class CourseAnnouncementsTab extends ConsumerWidget {
             final announcement = announcements[index];
             return Card(
               margin: const EdgeInsets.only(bottom: AppDimensions.stackMd),
-              child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.stackLg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.campaign),
-                        const SizedBox(width: AppDimensions.stackSm),
-                        Expanded(
-                          child: Text(
-                            announcement.title,
-                            style: Theme.of(context).textTheme.titleMedium,
+              child: MergeSemantics(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.stackLg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.campaign),
+                          SizedBox(width: AppDimensions.stackSm),
+                          Expanded(
+                            child: Text(
+                              announcement.title,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.stackLg),
-                    Text(
-                      'Posted by ${announcement.instructorName} on ${DateTime.parse(announcement.createdAt).toLocal().toString().split(' ')[0]}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: AppDimensions.stackMd),
-                    Text(announcement.body, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
+                        ],
+                      ),
+                      SizedBox(height: AppDimensions.stackLg),
+                      Text(
+                        'Posted by ${announcement.instructorName} on ${DateTime.parse(announcement.createdAt).toLocal().toString().split(' ')[0]}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      SizedBox(height: AppDimensions.stackMd),
+                      Text(announcement.body, style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  ),
                 ),
               ),
             );
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error loading announcements: $e')),
     );
   }

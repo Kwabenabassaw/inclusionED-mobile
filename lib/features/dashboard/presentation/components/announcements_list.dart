@@ -14,11 +14,11 @@ class AnnouncementsList extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Recent Announcements', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppDimensions.stackSm),
+        SizedBox(height: AppDimensions.stackSm),
         announcementsAsync.when(
           data: (announcements) {
             if (announcements.isEmpty) {
-              return const Card(
+              return Card(
                 child: Padding(
                   padding: EdgeInsets.all(AppDimensions.stackLg),
                   child: Center(
@@ -48,7 +48,7 @@ class AnnouncementsList extends ConsumerWidget {
               }).toList(),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(child: CircularProgressIndicator()),
           error: (err, stack) => Text('Error loading announcements: $err'),
         ),
       ],

@@ -1424,6 +1424,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
+  responsive_scaler:
+    dependency: "direct main"
+    description:
+      name: responsive_scaler
+      sha256: "1fbddb05243b9f11155d7a46470a184a669807d8b682b4529b7068e8ebca8dab"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   retry:
     dependency: transitive
     description:
@@ -2055,4 +2063,4 @@ packages:
     version: "2.1.1"
 sdks:
   dart: ">=3.12.2 <4.0.0"
-  flutter: ">=3.44.0"
+  flutter: ">=3.44.1"

@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               'OpenCampus LMS',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Empowering every mind with\nfocused learning.',
               textAlign: TextAlign.center,
@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 minHeight: 4,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'COGNITIVE EASE DESIGN',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 64),
+            SizedBox(height: 64),
           ],
         ),
       ),

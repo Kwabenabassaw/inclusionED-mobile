@@ -37,7 +37,7 @@ class LearningFlowSummary extends ConsumerWidget {
             child: Row(
               children: [
                 Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.onPrimaryContainer, size: 32),
-                const SizedBox(width: AppDimensions.stackLg),
+                SizedBox(width: AppDimensions.stackLg),
                 Expanded(
                   child: Text(
                     'Lesson Summary',
@@ -50,12 +50,12 @@ class LearningFlowSummary extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           Text(
             'Before taking the quiz, make sure you remember these key points:',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           
           // AI Generated Summary (Mocked for now)
           _buildSummaryPoint(context, 'This module covered the foundational concepts of ${module.title}.'),
@@ -80,7 +80,7 @@ class LearningFlowSummary extends ConsumerWidget {
                 child: Icon(Icons.circle, size: 12, color: Theme.of(context).colorScheme.primary),
               ),
             ),
-            const SizedBox(width: AppDimensions.stackLg),
+            SizedBox(width: AppDimensions.stackLg),
             Expanded(
               child: Text(
                 text,

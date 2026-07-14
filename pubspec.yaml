@@ -74,6 +74,7 @@ dependencies:
   record: ^7.1.1
   syncfusion_flutter_pdfviewer: ^33.2.13
   app_settings: ^7.0.0
+  responsive_scaler: ^1.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

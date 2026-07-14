@@ -149,7 +149,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text("Accessible Reader"),
+        title: Text("Accessible Reader"),
         elevation: 0,
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
@@ -222,7 +222,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
                       // Skip backward 30 words
                       IconButton(
                         onPressed: () => _skipWords(-30),
-                        icon: const Icon(Icons.replay_30),
+                        icon: Icon(Icons.replay_30),
                         iconSize: 36,
                         color: theme.colorScheme.primary,
                         tooltip: "Skip backward 30 words",
@@ -266,7 +266,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
                       // Skip forward 30 words
                       IconButton(
                         onPressed: () => _skipWords(30),
-                        icon: const Icon(Icons.forward_30),
+                        icon: Icon(Icons.forward_30),
                         iconSize: 36,
                         color: theme.colorScheme.primary,
                         tooltip: "Skip forward 30 words",
@@ -276,9 +276,9 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
 
                   // Expanded settings
                   if (_isPanelExpanded) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     const Divider(),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     // Engine Selection Row
                     // Removed because Kokoro AI is deleted
@@ -350,7 +350,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
               Row(
                 children: [
                   Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(title, style: theme.textTheme.bodyMedium),
                 ],
               ),

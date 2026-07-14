@@ -21,19 +21,19 @@ class CourseOverviewTab extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Course Description', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppDimensions.stackSm),
+          SizedBox(height: AppDimensions.stackSm),
           Text(course.description, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           
           Text('Details', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppDimensions.stackSm),
+          SizedBox(height: AppDimensions.stackSm),
           _buildDetailRow(context, 'Code', course.code),
           _buildDetailRow(context, 'Department', course.department),
           _buildDetailRow(context, 'Level', course.level),
           _buildDetailRow(context, 'Term', course.term),
           _buildDetailRow(context, 'Enrolled Students', '${course.studentsCount}'),
           
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           
           // Render progress logic if both are loaded
           if (enrollmentAsync.hasValue && modulesAsync.hasValue) ...[
@@ -55,7 +55,7 @@ class CourseOverviewTab extends ConsumerWidget {
                         Row(
                           children: [
                             Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                            const SizedBox(width: AppDimensions.stackSm),
+                            SizedBox(width: AppDimensions.stackSm),
                             Text(
                               'Your Progress',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -64,7 +64,7 @@ class CourseOverviewTab extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppDimensions.stackMd),
+                        SizedBox(height: AppDimensions.stackMd),
                         LinearProgressIndicator(
                           value: progress,
                           backgroundColor: Theme.of(context).colorScheme.surface,
@@ -72,7 +72,7 @@ class CourseOverviewTab extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                           minHeight: 8,
                         ),
-                        const SizedBox(height: AppDimensions.stackSm),
+                        SizedBox(height: AppDimensions.stackSm),
                         Text(
                           '${(progress * 100).toInt()}% Completed',
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -86,7 +86,7 @@ class CourseOverviewTab extends ConsumerWidget {
               }
             ),
           ] else ...[
-            const Center(child: CircularProgressIndicator()),
+            Center(child: CircularProgressIndicator()),
           ],
         ],
       ),

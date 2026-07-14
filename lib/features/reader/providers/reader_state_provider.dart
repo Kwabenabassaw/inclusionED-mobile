@@ -1,33 +1,38 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 
 class ReaderState {
   final int highlightStart;
   final int highlightEnd;
-  final bool isPlaying;
+  final PlaybackState playbackState;
   final bool ttsAvailable;
-  final String text;
+  final String displayText;
+  final String speechText;
 
   const ReaderState({
     this.highlightStart = 0,
     this.highlightEnd = 0,
-    this.isPlaying = false,
+    this.playbackState = PlaybackState.idle,
     this.ttsAvailable = true,
-    this.text = '',
+    this.displayText = '',
+    this.speechText = '',
   });
 
   ReaderState copyWith({
     int? highlightStart,
     int? highlightEnd,
-    bool? isPlaying,
+    PlaybackState? playbackState,
     bool? ttsAvailable,
-    String? text,
+    String? displayText,
+    String? speechText,
   }) {
     return ReaderState(
       highlightStart: highlightStart ?? this.highlightStart,
       highlightEnd: highlightEnd ?? this.highlightEnd,
-      isPlaying: isPlaying ?? this.isPlaying,
+      playbackState: playbackState ?? this.playbackState,
       ttsAvailable: ttsAvailable ?? this.ttsAvailable,
-      text: text ?? this.text,
+      displayText: displayText ?? this.displayText,
+      speechText: speechText ?? this.speechText,
     );
   }
 }
@@ -40,16 +45,16 @@ class ReaderStateNotifier extends Notifier<ReaderState> {
     state = state.copyWith(highlightStart: start, highlightEnd: end);
   }
 
-  void setPlaying(bool playing) {
-    state = state.copyWith(isPlaying: playing);
+  void setPlaybackState(PlaybackState playbackState) {
+    state = state.copyWith(playbackState: playbackState);
   }
 
   void setTtsAvailable(bool available) {
     state = state.copyWith(ttsAvailable: available);
   }
   
-  void setText(String text) {
-    state = state.copyWith(text: text);
+  void setText({required String displayText, required String speechText}) {
+    state = state.copyWith(displayText: displayText, speechText: speechText);
   }
 }
 

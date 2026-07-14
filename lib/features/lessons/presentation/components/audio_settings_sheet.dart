@@ -20,7 +20,7 @@ class AudioSettingsSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Audio Settings', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             
             // Playback Speed
             Text('Playback Speed', style: Theme.of(context).textTheme.titleMedium),
@@ -41,7 +41,7 @@ class AudioSettingsSheet extends ConsumerWidget {
                 }).toList(),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Voice Selection
             Text('Voice', style: Theme.of(context).textTheme.titleMedium),
@@ -61,12 +61,12 @@ class AudioSettingsSheet extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             
             // Download for offline
             ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('Download for Offline'),
+              leading: Icon(Icons.download),
+              title: Text('Download for Offline'),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Audio will be downloaded automatically when played.')),

@@ -14,10 +14,9 @@ class PlaybackProgressService {
   final FirebaseAuth _auth;
 
   PlaybackProgressService({
-    required FirebaseFirestore firestore,
-    required FirebaseAuth auth,
-  })  : _firestore = firestore,
-        _auth = auth;
+    required this._firestore,
+    required this._auth,
+  });
 
   Future<void> saveProgress({
     required String lessonId,

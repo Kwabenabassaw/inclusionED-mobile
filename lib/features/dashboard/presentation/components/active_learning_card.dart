@@ -25,7 +25,7 @@ class ActiveLearningCard extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: AppDimensions.stackMd),
+        SizedBox(height: AppDimensions.stackMd),
         activeCoursesAsync.when(
           data: (courses) {
             if (courses.isEmpty) {
@@ -51,18 +51,18 @@ class ActiveLearningCard extends ConsumerWidget {
         child: Column(
           children: [
             Icon(Icons.school_outlined, size: 48, color: theme.colorScheme.primary),
-            const SizedBox(height: AppDimensions.stackMd),
+            SizedBox(height: AppDimensions.stackMd),
             Text(
               'Ready to Start?',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: AppDimensions.stackSm),
+            SizedBox(height: AppDimensions.stackSm),
             Text(
               'Find and enroll in accessible courses from our catalog to begin learning.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
-            const SizedBox(height: AppDimensions.stackLg),
+            SizedBox(height: AppDimensions.stackLg),
             ElevatedButton(
               onPressed: () => context.go('/courses'),
               style: ElevatedButton.styleFrom(
@@ -71,7 +71,7 @@ class ActiveLearningCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                 ),
               ),
-              child: const Text('Explore Catalog'),
+              child: Text('Explore Catalog'),
             ),
           ],
         ),
@@ -113,7 +113,7 @@ class _ActiveCourseLoader extends ConsumerWidget {
 
     return enrollmentAsync.when(
       data: (Enrollment? enrollment) {
-        if (enrollment == null) return const SizedBox();
+        if (enrollment == null) return SizedBox();
         
         return modulesAsync.when(
           data: (modules) {
@@ -126,7 +126,7 @@ class _ActiveCourseLoader extends ConsumerWidget {
 
             // Get first incomplete module, or fallback to the last module
             final activeModule = modules.firstWhere(
-              (m) => m != null && !completedModuleIds.contains(m.id),
+              (m) => !completedModuleIds.contains(m.id),
               orElse: () => modules.last,
             );
 
@@ -136,11 +136,11 @@ class _ActiveCourseLoader extends ConsumerWidget {
               completedContentIds: progress?.completedContentIds ?? [],
             );
           },
-          loading: () => const SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
+          loading: () => SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
           error: (err, stack) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Modules Error: $err'))),
         );
       },
-      loading: () => const SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
+      loading: () => SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
       error: (err, stack) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Enrollment Error: $err'))),
     );
   }
@@ -224,7 +224,7 @@ class _ActiveModuleCard extends ConsumerWidget {
                           letterSpacing: 1.2,
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.stackSm),
+                      SizedBox(height: AppDimensions.stackSm),
                       Text(
                         module.title,
                         maxLines: 1,
@@ -234,7 +234,7 @@ class _ActiveModuleCard extends ConsumerWidget {
                           fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.stackSm),
+                      SizedBox(height: AppDimensions.stackSm),
                       Text(
                         module.description,
                         maxLines: 2,
@@ -243,7 +243,7 @@ class _ActiveModuleCard extends ConsumerWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.stackLg),
+                      SizedBox(height: AppDimensions.stackLg),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -262,7 +262,7 @@ class _ActiveModuleCard extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppDimensions.stackSm),
+                      SizedBox(height: AppDimensions.stackSm),
                       Semantics(
                         label: 'Course Progress',
                         value: '${(progress * 100).toInt()} percent completed',
@@ -282,7 +282,7 @@ class _ActiveModuleCard extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
+      loading: () => SizedBox(height: 240, child: Card(child: Center(child: CircularProgressIndicator()))),
       error: (err, stack) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Contents Error: $err'))),
     );
   }

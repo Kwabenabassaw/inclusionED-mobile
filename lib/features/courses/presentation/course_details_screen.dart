@@ -54,11 +54,11 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
 
     return asyncCourse.when(
       data: (courseData) {
-        final course = courseData as Course?;
+        final course = courseData;
         if (course == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Course Details')),
-            body: const Center(child: Text('Course not found.')),
+            appBar: AppBar(title: Text('Course Details')),
+            body: Center(child: Text('Course not found.')),
           );
         }
 
@@ -69,7 +69,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
         // Find the first module that is not fully completed to act as "Current"
         final completedModuleIds = enrollment?.progress?.completedModuleIds ?? [];
         final currentModule = modules.isNotEmpty 
-            ? modules.firstWhere((m) => !completedModuleIds.contains(m?.id), orElse: () => modules.first)
+            ? modules.firstWhere((m) => !completedModuleIds.contains(m.id), orElse: () => modules.first)
             : null;
 
         return Scaffold(
@@ -89,7 +89,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                   progressPercent: progressPercent,
                   currentModuleId: currentModule?.id,
                 ),
-                const SizedBox(height: AppDimensions.stackLg),
+                SizedBox(height: AppDimensions.stackLg),
                 CourseNavigationChips(
                   selectedSection: _selectedSection,
                   onSectionSelected: (section) {
@@ -98,23 +98,23 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                     });
                   },
                 ),
-                const SizedBox(height: AppDimensions.stackXl),
+                SizedBox(height: AppDimensions.stackXl),
                 
                 // Render content based on selected section
                 _buildSectionContent(course, currentModule, enrollment),
                 
-                const SizedBox(height: AppDimensions.stackXl * 2),
+                SizedBox(height: AppDimensions.stackXl * 2),
               ],
             ),
           ),
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
-        body: const Center(child: CircularProgressIndicator()),
+        appBar: AppBar(title: Text('Loading...')),
+        body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, st) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
+        appBar: AppBar(title: Text('Error')),
         body: Center(child: Text('Error: $e')),
       ),
     );
@@ -134,13 +134,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                 });
               },
             ),
-            const SizedBox(height: AppDimensions.stackXl),
+            SizedBox(height: AppDimensions.stackXl),
             UpcomingItemsCard(
               courseId: course.id,
               moduleId: currentModule?.id,
               completedQuizIds: enrollment?.progress?.completedQuizIds ?? [],
             ),
-            const SizedBox(height: AppDimensions.stackXl),
+            SizedBox(height: AppDimensions.stackXl),
           ],
         );
       case 'Learning Journey':

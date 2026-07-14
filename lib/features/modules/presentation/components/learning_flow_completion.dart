@@ -41,7 +41,7 @@ class LearningFlowCompletion extends ConsumerWidget {
               size: 100,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: AppDimensions.stackXl),
+            SizedBox(height: AppDimensions.stackXl),
             Text(
               'Week Completed!',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -50,13 +50,13 @@ class LearningFlowCompletion extends ConsumerWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimensions.stackLg),
+            SizedBox(height: AppDimensions.stackLg),
             Text(
               'Congratulations on finishing ${module.title}.',
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimensions.stackXl * 2),
+            SizedBox(height: AppDimensions.stackXl * 2),
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -69,7 +69,7 @@ class LearningFlowCompletion extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
                   ),
                 ),
-                child: const Text('Return to Course Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text('Return to Course Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

@@ -7,6 +7,7 @@ import '../../data/tts_repository.dart';
 import '../../data/audio_cache_service.dart';
 import '../../data/playback_progress_service.dart';
 import 'audio_player_state.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 
 final audioPlayerControllerProvider = NotifierProvider<AudioPlayerController, AudioPlayerState>(() {
   return AudioPlayerController();
@@ -59,10 +60,14 @@ class AudioPlayerController extends Notifier<AudioPlayerState> {
       final isPlaying = playerState.playing;
       final processingState = playerState.processingState;
       if (processingState == ProcessingState.completed) {
-        state = state.copyWith(isPlaying: false);
+        state = state.copyWith(playbackState: PlaybackState.idle);
         _saveProgress(completed: true);
       } else {
-        state = state.copyWith(isPlaying: isPlaying);
+        if (state.playbackState == PlaybackState.stoppedForNavigation && !isPlaying) {
+          // Keep stoppedForNavigation state if it was explicitly set
+        } else {
+          state = state.copyWith(playbackState: isPlaying ? PlaybackState.speaking : PlaybackState.pausedByUser);
+        }
       }
     });
   }
@@ -93,7 +98,7 @@ class AudioPlayerController extends Notifier<AudioPlayerState> {
 
   Future<void> playLesson({required String lessonId, required String text}) async {
     try {
-      if (state.currentLessonId == lessonId && state.isPlaying) return;
+      if (state.currentLessonId == lessonId && state.playbackState == PlaybackState.speaking) return;
 
       if (state.currentLessonId == lessonId) {
         if (_player.processingState == ProcessingState.completed) {
@@ -147,11 +152,13 @@ class AudioPlayerController extends Notifier<AudioPlayerState> {
   }
 
   Future<void> pause() async {
+    state = state.copyWith(playbackState: PlaybackState.pausedByUser);
     await _player.pause();
     await _saveProgress();
   }
 
   Future<void> stop() async {
+    state = state.copyWith(playbackState: PlaybackState.stoppedForNavigation);
     await _player.stop();
     await _saveProgress();
     state = state.copyWith(position: Duration.zero);

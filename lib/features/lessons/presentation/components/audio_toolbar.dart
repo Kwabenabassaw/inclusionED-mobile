@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/audio_player_controller.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'audio_settings_sheet.dart';
 
 class AudioToolbar extends ConsumerWidget {
@@ -28,11 +29,11 @@ class AudioToolbar extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),
@@ -72,7 +73,7 @@ class AudioToolbar extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.settings),
+                  icon: Icon(Icons.settings),
                   tooltip: 'Audio Settings',
                   onPressed: () {
                     showModalBottomSheet(
@@ -83,26 +84,26 @@ class AudioToolbar extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 if (state.isLoading)
                   const CircularProgressIndicator()
                 else
                   IconButton(
                     iconSize: 48,
-                    icon: Icon(state.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill),
-                    tooltip: state.isPlaying ? 'Pause' : 'Play',
+                    icon: Icon(state.playbackState == PlaybackState.speaking ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                    tooltip: state.playbackState == PlaybackState.speaking ? 'Pause' : 'Play',
                     color: Theme.of(context).colorScheme.primary,
                     onPressed: () {
-                      if (state.isPlaying) {
+                      if (state.playbackState == PlaybackState.speaking) {
                         controller.pause();
                       } else {
                         controller.playLesson(lessonId: lessonId, text: lessonText);
                       }
                     },
                   ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 IconButton(
-                  icon: const Icon(Icons.stop),
+                  icon: Icon(Icons.stop),
                   tooltip: 'Stop',
                   onPressed: () {
                     controller.stop();

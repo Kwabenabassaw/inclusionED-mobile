@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
@@ -8,10 +9,7 @@ import 'package:opencampus_lms/features/modules/presentation/providers/readable_
 class ReadingModeWrapper extends ConsumerWidget {
   final Widget child;
 
-  const ReadingModeWrapper({
-    super.key,
-    required this.child,
-  });
+  const ReadingModeWrapper({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,45 +24,66 @@ class ReadingModeWrapper extends ConsumerWidget {
     }
 
     // Otherwise, show the Reading Mode with Highlighting
-    final textColor = accessSettings.highContrast 
-        ? Colors.yellowAccent 
+    final textColor = accessSettings.highContrast
+        ? Colors.yellowAccent
         : theme.colorScheme.onSurface;
 
-    final bgColor = accessSettings.highContrast  
-        ? Colors.black 
+    final bgColor = accessSettings.highContrast
+        ? Colors.black
         : theme.colorScheme.surface;
 
     // Use currentTextToSpeak from playback if available, fallback to the textToRead provider
-    final text = playback.currentTextToSpeak.isNotEmpty ? playback.currentTextToSpeak : textToRead;
+    final text = playback.currentTextToSpeak.isNotEmpty
+        ? playback.currentTextToSpeak
+        : textToRead;
 
     Widget content;
 
-    if (playback.highlightEnd == 0 || playback.highlightEnd > text.length || playback.highlightStart >= playback.highlightEnd) {
+    if (playback.highlightEnd == 0 ||
+        playback.highlightEnd > text.length ||
+        playback.highlightStart >= playback.highlightEnd) {
       // If we don't have valid highlight bounds, just show the text without highlights
       content = Text(
         text,
         style: theme.textTheme.bodyLarge?.copyWith(
-          fontSize: (theme.textTheme.bodyLarge?.fontSize ?? 16) * accessSettings.textScale * 1.2,
+          fontSize:
+              (theme.textTheme.bodyLarge?.fontSize ?? 16) *
+              accessSettings.textScale *
+              1.2,
           color: textColor,
           height: accessSettings.lineSpacing * 1.5,
           letterSpacing: 0.5,
-          fontFamily: accessSettings.fontFamily == 'System' ? null : accessSettings.fontFamily,
-          fontWeight: accessSettings.boldText ? FontWeight.bold : FontWeight.normal,
+          fontFamily: accessSettings.fontFamily == 'System'
+              ? null
+              : accessSettings.fontFamily,
+          fontWeight: accessSettings.boldText
+              ? FontWeight.bold
+              : FontWeight.normal,
         ),
       );
     } else {
       // Valid highlight bounds: slice the string and apply background color to the active word
       final beforeText = text.substring(0, playback.highlightStart);
-      final highlightedWord = text.substring(playback.highlightStart, playback.highlightEnd);
+      final highlightedWord = text.substring(
+        playback.highlightStart,
+        playback.highlightEnd,
+      );
       final afterText = text.substring(playback.highlightEnd);
 
       final baseStyle = theme.textTheme.bodyLarge?.copyWith(
-        fontSize: (theme.textTheme.bodyLarge?.fontSize ?? 16) * accessSettings.textScale * 1.2,
+        fontSize:
+            (theme.textTheme.bodyLarge?.fontSize ?? 16) *
+            accessSettings.textScale *
+            1.2,
         color: textColor,
         height: accessSettings.lineSpacing * 1.5,
         letterSpacing: 0.5,
-        fontFamily: accessSettings.fontFamily == 'System' ? null : accessSettings.fontFamily,
-        fontWeight: accessSettings.boldText ? FontWeight.bold : FontWeight.normal,
+        fontFamily: accessSettings.fontFamily == 'System'
+            ? null
+            : accessSettings.fontFamily,
+        fontWeight: accessSettings.boldText
+            ? FontWeight.bold
+            : FontWeight.normal,
       );
 
       final highlightStyle = baseStyle?.copyWith(

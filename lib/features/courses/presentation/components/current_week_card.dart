@@ -15,7 +15,7 @@ class CurrentWeekCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (activeModule == null) return const SizedBox.shrink();
+    if (activeModule == null) return SizedBox.shrink();
 
     final theme = Theme.of(context);
 
@@ -30,7 +30,7 @@ class CurrentWeekCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           Card(
             elevation: 0,
             margin: EdgeInsets.zero,
@@ -84,14 +84,14 @@ class CurrentWeekCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: AppDimensions.stackMd),
+                            SizedBox(height: AppDimensions.stackMd),
                             Text(
                               activeModule!.title,
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: AppDimensions.stackSm),
+                            SizedBox(height: AppDimensions.stackSm),
                             Text(
                               activeModule!.description,
                               maxLines: 2,
@@ -119,7 +119,7 @@ class CurrentWeekCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                         ),
                       ),
-                      child: const Text('Start Studying Now'),
+                      child: Text('Start Studying Now'),
                     ),
                   ),
                 ],

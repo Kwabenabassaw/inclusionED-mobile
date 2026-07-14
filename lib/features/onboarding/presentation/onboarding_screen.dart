@@ -72,7 +72,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                     )
                   else
-                    const SizedBox(width: 48),
+                    SizedBox(width: 48),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -165,7 +165,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           );
                         }
                       },
-                      icon: const Icon(Icons.mic_none),
+                      icon: Icon(Icons.mic_none),
                       label: Text(
                         'Enable Microphone',
                         style: TextStyle(
@@ -212,7 +212,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32),
                   Semantics(
                     button: true,
                     label: _currentPage < _totalPages - 1 ? 'Next' : 'Get Started',
@@ -263,7 +263,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: isHighContrast ? Colors.yellow.withOpacity(0.1) : Theme.of(context).colorScheme.primaryContainer,
+                color: isHighContrast ? Colors.yellow.withValues(alpha: 0.1) : Theme.of(context).colorScheme.primaryContainer,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isHighContrast ? Colors.yellow : Colors.transparent,
@@ -277,7 +277,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 48),
+          SizedBox(height: 48),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -289,7 +289,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             textScaler: TextScaler.linear(settings.textScale),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             description,
             textAlign: TextAlign.center,
@@ -301,7 +301,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textScaler: TextScaler.linear(settings.textScale),
           ),
           if (action != null) ...[
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             action,
           ],
         ],

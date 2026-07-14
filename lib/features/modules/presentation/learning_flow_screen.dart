@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/core/providers/global_fab_provider.dart';
 import 'package:opencampus_lms/features/modules/data/module_repository.dart';
@@ -39,6 +40,7 @@ class LearningFlowScreen extends ConsumerStatefulWidget {
 class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isVisible = true;
 
   @override
   void dispose() {
@@ -73,38 +75,62 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
     final quizzesAsync = ref.watch(moduleQuizzesProvider(widget.moduleId));
     final enrollmentAsync = ref.watch(activeEnrollmentStreamProvider(widget.courseId));
 
-    return Scaffold(
-      body: moduleAsync.when(
-        data: (module) {
-          if (module == null) {
-            return _buildErrorState('Module not found.');
+    return VisibilityDetector(
+      key: const Key('learning_flow_screen_visibility'),
+      onVisibilityChanged: (info) {
+        if (!mounted) return;
+        final isVisible = info.visibleFraction > 0;
+        if (_isVisible != isVisible) {
+          _isVisible = isVisible;
+          if (!_isVisible) {
+            // Screen is no longer visible (e.g. user navigated to a different tab)
+            // Ensure FAB is restored.
+            ref.read(hideGlobalFabProvider.notifier).state = false;
+          } else {
+            // Screen is visible again, apply current page logic
+            final isQuizPage = quizzesAsync.asData?.value.isNotEmpty == true && _currentPage == 3;
+            ref.read(hideGlobalFabProvider.notifier).state = isQuizPage;
           }
+        }
+      },
+      child: Scaffold(
+        body: moduleAsync.when(
+          data: (module) {
+            if (module == null) {
+              return _buildErrorState('Module not found.');
+            }
 
-          return quizzesAsync.when(
-            data: (quizzes) {
-              final quiz = quizzes.isNotEmpty ? quizzes.first : null;
-              final enrollment = enrollmentAsync.asData?.value;
-              
-              return _buildFlow(module, quiz, enrollment);
-            },
-            loading: () => _buildLoadingState(),
-            error: (e, st) => _buildErrorState('Failed to load quizzes: $e'),
-          );
-        },
-        loading: () => _buildLoadingState(),
-        error: (e, st) => _buildErrorState('Failed to load module: $e'),
+            return quizzesAsync.when(
+              data: (quizzes) {
+                final quiz = quizzes.isNotEmpty ? quizzes.first : null;
+                final enrollment = enrollmentAsync.asData?.value;
+                
+                return _buildFlow(module, quiz, enrollment);
+              },
+              loading: () => _buildLoadingState(),
+              error: (e, st) => _buildErrorState('Failed to load quizzes: $e'),
+            );
+          },
+          loading: () => _buildLoadingState(),
+          error: (e, st) => _buildErrorState('Failed to load module: $e'),
+        ),
       ),
     );
   }
 
   Widget _buildLoadingState() {
-    return const Center(child: CircularProgressIndicator());
+    return Center(child: CircularProgressIndicator());
   }
 
   Widget _buildErrorState(String message) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Error')),
-      body: Center(child: Text(message)),
+      appBar: AppBar(title: Text('Error')),
+      body: Center(
+        child: Semantics(
+          label: message,
+          child: Text(message),
+        ),
+      ),
     );
   }
 
@@ -131,7 +157,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
     final isQuizPage = quiz != null && _currentPage == 3;
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted && _isVisible) {
         final currentlyHidden = ref.read(hideGlobalFabProvider);
         if (currentlyHidden != isQuizPage) {
           ref.read(hideGlobalFabProvider.notifier).state = isQuizPage;
@@ -178,7 +204,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
                   //   ),
                    
                   // ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   IconButton(
                     icon: Icon(Icons.text_fields_rounded, color: Theme.of(context).colorScheme.primary),
                     tooltip: 'Display Settings',
@@ -221,9 +247,6 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
           ),
         ),
         
-        // Global Audio Dock
-        const LearningFlowAudioDock(),
-        
         // Bottom Navigation Bar
         Container(
             padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -238,23 +261,24 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
               ],
             ),
             child: SafeArea(
+              bottom: false,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (!isFirstPage && !isLastPage && !isQuizPage)
                     TextButton.icon(
                       onPressed: _previousPage,
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back'),
+                      icon: Icon(Icons.arrow_back),
+                      label: Text('Back'),
                     )
                   else
-                    const SizedBox.shrink(),
+                    SizedBox.shrink(),
                     
                   if (!isLastPage && !isQuizPage)
                     ElevatedButton.icon(
                       onPressed: () => _nextPage(totalPages),
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text('Next'),
+                      icon: Icon(Icons.arrow_forward),
+                      label: Text('Next'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -262,7 +286,7 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
                     ),
                   
                   if (isQuizPage)
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Complete the quiz above to proceed',
                         textAlign: TextAlign.center,
@@ -273,6 +297,12 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
               ),
             ),
           ),
+          
+        // Global Audio Dock
+        const SafeArea(
+          top: false,
+          child: LearningFlowAudioDock(),
+        ),
       ],
     );
   }

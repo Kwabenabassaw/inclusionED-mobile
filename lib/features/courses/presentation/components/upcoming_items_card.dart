@@ -18,7 +18,7 @@ class UpcomingItemsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (moduleId == null) return const SizedBox.shrink();
+    if (moduleId == null) return SizedBox.shrink();
 
     final quizzesAsync = ref.watch(moduleQuizzesProvider(moduleId!));
     final theme = Theme.of(context);
@@ -34,7 +34,7 @@ class UpcomingItemsCard extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           quizzesAsync.when(
             data: (quizzes) {
               // Filter out quizzes that are already completed
@@ -61,38 +61,40 @@ class UpcomingItemsCard extends ConsumerWidget {
                     color: theme.colorScheme.surfaceContainerLowest,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                      child: ListTile(
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.errorContainer.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                      child: MergeSemantics(
+                        child: ListTile(
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.errorContainer.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.assignment_late_outlined, 
+                              color: theme.colorScheme.error,
+                              size: 20,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.assignment_late_outlined, 
-                            color: theme.colorScheme.error,
-                            size: 20,
+                          title: Text(
+                            quiz.title, 
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
+                          subtitle: Text(
+                            '${quiz.timeLimit} mins • ${quiz.totalPoints} points',
+                          ),
+                          trailing: Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.go('/courses/$courseId/quizzes/${quiz.id}');
+                          },
                         ),
-                        title: Text(
-                          quiz.title, 
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${quiz.timeLimit} mins • ${quiz.totalPoints} points',
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          context.go('/courses/$courseId/quizzes/${quiz.id}');
-                        },
                       ),
                     ),
                   ),
                 )).toList(),
               );
             },
-            loading: () => const Center(
+            loading: () => Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: CircularProgressIndicator(),
@@ -123,19 +125,23 @@ class UpcomingItemsCard extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.stackLg),
-        child: Row(
-          children: [
-            Icon(Icons.emoji_events_outlined, size: 28, color: theme.colorScheme.secondary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'All caught up! No upcoming tasks for this module.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+        child: Semantics(
+          label: 'All caught up! No upcoming tasks for this module.',
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              Icon(Icons.emoji_events_outlined, size: 28, color: theme.colorScheme.secondary),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'All caught up! No upcoming tasks for this module.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

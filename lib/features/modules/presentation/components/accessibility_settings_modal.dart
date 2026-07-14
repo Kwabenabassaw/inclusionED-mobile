@@ -29,18 +29,18 @@ class AccessibilitySettingsModal extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
             const Divider(),
-            const SizedBox(height: AppDimensions.stackMd),
+            SizedBox(height: AppDimensions.stackMd),
             Text('Text Size', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: AppDimensions.stackSm),
+            SizedBox(height: AppDimensions.stackSm),
             Row(
               children: [
-                const Text('A', style: TextStyle(fontSize: 14)),
+                Text('A', style: TextStyle(fontSize: 14)),
                 Expanded(
                   child: Slider(
                     value: settings.textScale,
@@ -53,20 +53,20 @@ class AccessibilitySettingsModal extends ConsumerWidget {
                     },
                   ),
                 ),
-                const Text('A', style: TextStyle(fontSize: 24)),
+                Text('A', style: TextStyle(fontSize: 24)),
               ],
             ),
-            const SizedBox(height: AppDimensions.stackLg),
+            SizedBox(height: AppDimensions.stackLg),
             SwitchListTile(
-              title: const Text('High Contrast Mode'),
-              subtitle: const Text('Increases contrast for better readability'),
+              title: Text('High Contrast Mode'),
+              subtitle: Text('Increases contrast for better readability'),
               value: settings.highContrast,
               onChanged: (value) {
                 ref.read(accessibilityProvider.notifier).toggleHighContrast();
               },
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: AppDimensions.stackLg),
+            SizedBox(height: AppDimensions.stackLg),
           ],
         ),
       ),

@@ -19,10 +19,13 @@ class CourseModulesTab extends ConsumerWidget {
     return asyncModules.when(
       data: (modules) {
         if (modules.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Text('No modules available yet.'),
+              child: Semantics(
+                label: 'No modules available yet.',
+                child: Text('No modules available yet.'),
+              ),
             ),
           );
         }
@@ -58,7 +61,7 @@ class CourseModulesTab extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(
+      loading: () => Center(
         child: Padding(
           padding: EdgeInsets.all(32.0),
           child: CircularProgressIndicator(),
@@ -155,7 +158,7 @@ class _ModuleTimelineCard extends ConsumerWidget {
                 ),
             ],
           ),
-          const SizedBox(width: AppDimensions.stackMd),
+          SizedBox(width: AppDimensions.stackMd),
           
           // Card representing the Module Journey step
           Expanded(
@@ -175,121 +178,123 @@ class _ModuleTimelineCard extends ConsumerWidget {
                   : theme.colorScheme.surfaceContainerLowest,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                child: InkWell(
-                  onTap: isLocked 
-                      ? null 
-                      : () => context.go('/courses/$courseId/modules/${module.id}'),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.stackLg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'WEEK ${module.orderIndex + 1}',
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: statusColor,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isCompleted 
-                                    ? Colors.green.withValues(alpha: 0.1)
-                                    : isCurrent 
-                                        ? theme.colorScheme.primaryContainer
-                                        : theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                              ),
-                              child: Text(
-                                statusText,
-                                style: theme.textTheme.labelSmall?.copyWith(
+                child: MergeSemantics(
+                  child: InkWell(
+                    onTap: isLocked 
+                        ? null 
+                        : () => context.go('/courses/$courseId/modules/${module.id}'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppDimensions.stackLg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'WEEK ${module.orderIndex + 1}',
+                                style: theme.textTheme.labelLarge?.copyWith(
                                   color: statusColor,
                                   fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isCompleted 
+                                      ? Colors.green.withValues(alpha: 0.1)
+                                      : isCurrent 
+                                          ? theme.colorScheme.primaryContainer
+                                          : theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                                ),
+                                child: Text(
+                                  statusText,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: AppDimensions.stackSm),
+                          Text(
+                            module.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isLocked 
+                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.6) 
+                                  : theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            module.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          
+                          // Show progress if active or completed
+                          if (!isLocked) ...[
+                            SizedBox(height: AppDimensions.stackLg),
+                            contentsAsync.when(
+                              data: (contents) {
+                                if (contents.isEmpty) return SizedBox.shrink();
+                                final completedCount = contents.where((c) => completedContentIds.contains(c.id)).length;
+                                final progress = completedCount / contents.length;
+  
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Module Progress',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          '$completedCount/${contents.length} steps',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 6),
+                                    LinearProgressIndicator(
+                                      value: progress,
+                                      backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                                      color: isCompleted ? Colors.green : theme.colorScheme.primary,
+                                      minHeight: 6,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ],
+                                );
+                              },
+                              loading: () => const LinearProgressIndicator(minHeight: 2),
+                              error: (err, stack) => SizedBox.shrink(),
+                            ),
+                            SizedBox(height: AppDimensions.stackLg),
+                            OutlinedButton.icon(
+                              onPressed: () => context.go('/courses/$courseId/reader/${module.id}'),
+                              icon: Icon(Icons.accessibility_new),
+                              label: Text('Accessible Reader'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(40),
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: AppDimensions.stackSm),
-                        Text(
-                          module.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: isLocked 
-                                ? theme.colorScheme.onSurface.withValues(alpha: 0.6) 
-                                : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          module.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        
-                        // Show progress if active or completed
-                        if (!isLocked) ...[
-                          const SizedBox(height: AppDimensions.stackLg),
-                          contentsAsync.when(
-                            data: (contents) {
-                              if (contents.isEmpty) return const SizedBox.shrink();
-                              final completedCount = contents.where((c) => completedContentIds.contains(c?.id)).length;
-                              final progress = completedCount / contents.length;
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Module Progress',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        '$completedCount/${contents.length} steps',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  LinearProgressIndicator(
-                                    value: progress,
-                                    backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                                    color: isCompleted ? Colors.green : theme.colorScheme.primary,
-                                    minHeight: 6,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ],
-                              );
-                            },
-                            loading: () => const LinearProgressIndicator(minHeight: 2),
-                            error: (err, stack) => const SizedBox.shrink(),
-                          ),
-                          const SizedBox(height: AppDimensions.stackLg),
-                          OutlinedButton.icon(
-                            onPressed: () => context.go('/courses/$courseId/reader/${module.id}'),
-                            icon: const Icon(Icons.accessibility_new),
-                            label: const Text('Accessible Reader'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(40),
-                            ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),

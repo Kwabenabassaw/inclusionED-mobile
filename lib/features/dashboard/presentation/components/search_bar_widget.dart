@@ -12,7 +12,7 @@ class SearchBarWidget extends StatelessWidget {
       onTap: () => context.go('/courses'),
       decoration: InputDecoration(
         hintText: 'Search courses, lessons, assignments...',
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: Icon(Icons.search),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(

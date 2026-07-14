@@ -34,7 +34,7 @@ class LearningFlowOverview extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackLg),
+          SizedBox(height: AppDimensions.stackLg),
           Text(
             module.title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -42,19 +42,19 @@ class LearningFlowOverview extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           Text(
             module.description,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(height: AppDimensions.stackXl * 2),
+          SizedBox(height: AppDimensions.stackXl * 2),
           Text(
             'Learning Objectives',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           // Mock objectives since they aren't strictly defined in the schema
           _buildObjectiveItem(context, 'Understand the core concepts of this week.'),
           _buildObjectiveItem(context, 'Apply the theoretical knowledge to practical exercises.'),
@@ -75,7 +75,7 @@ class LearningFlowOverview extends ConsumerWidget {
               excludeSemantics: true,
               child: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary, size: 20),
             ),
-            const SizedBox(width: AppDimensions.stackSm),
+            SizedBox(width: AppDimensions.stackSm),
             Expanded(
               child: Text(
                 text,

@@ -140,7 +140,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   final PageController _pageController = PageController();
   int _currentQuestionIndex = 0;
 
-  Map<int, String> _selectedAnswers = {};
+  final Map<int, String> _selectedAnswers = {};
   bool _isSubmitting = false;
 
   Timer? _timer;
@@ -635,7 +635,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     if (widget.quiz.questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.quiz.title)),
-        body: const Center(child: Text('No questions in this quiz.')),
+        body: Center(
+          child: Semantics(
+            label: 'No questions in this quiz.',
+            child: Text('No questions in this quiz.'),
+          ),
+        ),
       );
     }
 
@@ -656,7 +661,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               title: Text(widget.quiz.title),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.settings_accessibility),
+                  icon: Icon(Icons.settings_accessibility),
                   tooltip: 'Accessibility Settings',
                   onPressed: _showAccessibilitySettings,
                 ),
@@ -691,7 +696,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           Consumer(
             builder: (context, ref, child) {
               final voiceState = ref.watch(quizVoiceControllerProvider);
-              if (!voiceState.isListening && voiceState.lastWords.isEmpty) return const SizedBox.shrink();
+              if (!voiceState.isListening && voiceState.lastWords.isEmpty) return SizedBox.shrink();
               
               return Container(
                 width: double.infinity,
@@ -759,7 +764,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               tooltip: _isSpeaking ? 'Stop' : 'Play',
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           _buildCenterMicButton(),
         ],
       ),
@@ -857,7 +862,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           // For question text: highlight when _highlightChunk == 'question'.
           // _highlightStart/_End are direct positions in question.text from FlutterTts.
           _buildHighlightedText(
@@ -867,7 +872,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             isActive: isActive,
           ),
           if (question.altText != null && question.altText!.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.stackSm),
+            SizedBox(height: AppDimensions.stackSm),
             Text(
               '[Image Description: ${question.altText}]',
               style:
@@ -875,7 +880,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               textScaler: TextScaler.linear(_fontScaleMultiplier),
             ),
           ],
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           _buildInputForQuestionType(question, index),
         ],
       ),
@@ -921,7 +926,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       return Column(
         children: [
           _buildTrueFalseButton(index, answer, 'True', 0, isActive),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           _buildTrueFalseButton(index, answer, 'False', 1, isActive),
         ],
       );
@@ -1063,7 +1068,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         children: [
           TextButton(
             onPressed: _currentQuestionIndex > 0 ? _previousQuestion : null,
-            child: const Text('Previous'),
+            child: Text('Previous'),
           ),
           ElevatedButton(
             onPressed:

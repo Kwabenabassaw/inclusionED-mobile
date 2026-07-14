@@ -63,7 +63,7 @@ class CourseBanner extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           Text(
             course.name,
             style: theme.textTheme.headlineMedium?.copyWith(
@@ -72,7 +72,7 @@ class CourseBanner extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackSm),
+          SizedBox(height: AppDimensions.stackSm),
           Text(
             'DEPARTMENT OF ${course.department.toUpperCase()}',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -83,7 +83,7 @@ class CourseBanner extends StatelessWidget {
               letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: AppDimensions.stackXl),
+          SizedBox(height: AppDimensions.stackXl),
           MergeSemantics(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +107,7 @@ class CourseBanner extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppDimensions.stackSm),
+                SizedBox(height: AppDimensions.stackSm),
                 Semantics(
                   label: 'Course Progress',
                   value: '${(progressPercent * 100).toInt()} percent',
@@ -124,7 +124,7 @@ class CourseBanner extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppDimensions.stackLg),
+          SizedBox(height: AppDimensions.stackLg),
           if (currentModuleId != null)
             SizedBox(
               width: double.infinity,
@@ -132,8 +132,8 @@ class CourseBanner extends StatelessWidget {
                 onPressed: () {
                   context.go('/courses/${course.id}/modules/$currentModuleId');
                 },
-                icon: const Icon(Icons.play_arrow, size: 20),
-                label: const Text('Continue Study Journey'),
+                icon: Icon(Icons.play_arrow, size: 20),
+                label: Text('Continue Study Journey'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: hasImage ? Colors.white : theme.colorScheme.onPrimaryContainer,
                   foregroundColor: hasImage ? Colors.black : theme.colorScheme.primaryContainer,

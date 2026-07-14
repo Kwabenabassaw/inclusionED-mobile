@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
@@ -9,17 +10,26 @@ class VoiceSettingsScreen extends ConsumerStatefulWidget {
   const VoiceSettingsScreen({super.key});
 
   @override
-  ConsumerState<VoiceSettingsScreen> createState() => _VoiceSettingsScreenState();
+  ConsumerState<VoiceSettingsScreen> createState() =>
+      _VoiceSettingsScreenState();
 }
 
 class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
   final FlutterTts _localTtsForQuery = FlutterTts();
   List<Map<String, String>> _nativeVoices = [];
   bool _isLoadingNativeVoices = true;
-  final String _previewText = "Welcome to Inclusive Ed. This is a preview of your synthesized reading voice.";
+  final String _previewText =
+      "Welcome to Inclusive Ed. This is a preview of your synthesized reading voice.";
 
   final List<String> _pollyVoices = [
-    'Joanna', 'Salli', 'Matthew', 'Justin', 'Kendra', 'Joey', 'Ivy', 'Kevin'
+    'Joanna',
+    'Salli',
+    'Matthew',
+    'Justin',
+    'Kendra',
+    'Joey',
+    'Ivy',
+    'Kevin',
   ];
 
   @override
@@ -32,13 +42,20 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
     try {
       final dynamic voices = await _localTtsForQuery.getVoices;
       if (voices is List) {
-        final parsed = voices.map((e) {
-          final map = Map<dynamic, dynamic>.from(e as Map);
-          return {
-            'name': map['name']?.toString() ?? '',
-            'locale': map['locale']?.toString() ?? '',
-          };
-        }).where((v) => (v['locale']?.toLowerCase().startsWith('en') ?? false) && (v['name']?.isNotEmpty ?? false)).toList();
+        final parsed = voices
+            .map((e) {
+              final map = Map<dynamic, dynamic>.from(e as Map);
+              return {
+                'name': map['name']?.toString() ?? '',
+                'locale': map['locale']?.toString() ?? '',
+              };
+            })
+            .where(
+              (v) =>
+                  (v['locale']?.toLowerCase().startsWith('en') ?? false) &&
+                  (v['name']?.isNotEmpty ?? false),
+            )
+            .toList();
 
         if (mounted) {
           setState(() {
@@ -69,12 +86,17 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
     final isPolly = settings.ttsEngine == 'polly';
     final currentSpeed = isPolly ? settings.pollySpeed : settings.nativeSpeed;
     final currentPitch = isPolly ? settings.pollyPitch : settings.nativePitch;
-    final currentVolume = isPolly ? settings.pollyVolume : settings.nativeVolume;
+    final currentVolume = isPolly
+        ? settings.pollyVolume
+        : settings.nativeVolume;
     final currentVoice = isPolly ? settings.pollyVoice : settings.nativeVoice;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Voice Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Voice Settings',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -82,11 +104,11 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildPreviewCard(theme, playback, currentVoice),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             _buildEngineSelector(theme, settings.ttsEngine, notifier),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             _buildVoiceDropdown(theme, isPolly, currentVoice, notifier),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             _buildSliderCard(
               theme: theme,
               title: 'Reading Speed',
@@ -103,10 +125,12 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
                 }
               },
               onChangeEnd: (val) {
-                ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildSliderCard(
               theme: theme,
               title: 'Voice Pitch',
@@ -123,10 +147,12 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
                 }
               },
               onChangeEnd: (val) {
-                ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildSliderCard(
               theme: theme,
               title: 'Volume Level',
@@ -143,24 +169,35 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
                 }
               },
               onChangeEnd: (val) {
-                ref.read(playbackControllerProvider.notifier).changeSettingsAndResume();
+                ref
+                    .read(playbackControllerProvider.notifier)
+                    .changeSettingsAndResume();
               },
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPreviewCard(ThemeData theme, PlaybackData playback, String voice) {
-    final isPlaying = playback.state == PlaybackState.speaking && playback.currentTextToSpeak.contains("Inclusive Ed");
+  Widget _buildPreviewCard(
+    ThemeData theme,
+    PlaybackData playback,
+    String voice,
+  ) {
+    final isPlaying =
+        playback.state == PlaybackState.speaking &&
+        playback.currentTextToSpeak.contains("Inclusive Ed");
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [theme.colorScheme.primary, theme.colorScheme.primaryContainer],
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primaryContainer,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -177,8 +214,11 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.record_voice_over, color: theme.colorScheme.onPrimaryContainer),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.record_voice_over,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+              SizedBox(width: 8),
               Text(
                 'Voice Test Preview',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -188,7 +228,7 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -205,7 +245,7 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
               final controller = ref.read(playbackControllerProvider.notifier);
@@ -218,7 +258,9 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.surface,
               foregroundColor: theme.colorScheme.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
@@ -229,7 +271,11 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
     );
   }
 
-  Widget _buildEngineSelector(ThemeData theme, String activeEngine, AccessibilityNotifier notifier) {
+  Widget _buildEngineSelector(
+    ThemeData theme,
+    String activeEngine,
+    AccessibilityNotifier notifier,
+  ) {
     final isPolly = activeEngine == 'polly';
     return Container(
       padding: const EdgeInsets.all(6),
@@ -246,7 +292,9 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
               theme: theme,
               onTap: () {
                 notifier.setTtsEngine('polly');
-                ref.read(playbackControllerProvider.notifier).stopForNavigation();
+                ref
+                    .read(playbackControllerProvider.notifier)
+                    .stopForNavigation();
               },
             ),
           ),
@@ -257,7 +305,9 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
               theme: theme,
               onTap: () {
                 notifier.setTtsEngine('native');
-                ref.read(playbackControllerProvider.notifier).stopForNavigation();
+                ref
+                    .read(playbackControllerProvider.notifier)
+                    .stopForNavigation();
               },
             ),
           ),
@@ -280,20 +330,24 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Center(
           child: Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -301,9 +355,14 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
     );
   }
 
-  Widget _buildVoiceDropdown(ThemeData theme, bool isPolly, String currentVoice, AccessibilityNotifier notifier) {
+  Widget _buildVoiceDropdown(
+    ThemeData theme,
+    bool isPolly,
+    String currentVoice,
+    AccessibilityNotifier notifier,
+  ) {
     if (!isPolly && _isLoadingNativeVoices) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
           child: CircularProgressIndicator(),
@@ -315,36 +374,52 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
 
     if (isPolly) {
       for (final voice in _pollyVoices) {
-        items.add(DropdownMenuItem(
-          value: voice,
-          child: Text('$voice (Polly)', style: const TextStyle(fontWeight: FontWeight.w500)),
-        ));
+        items.add(
+          DropdownMenuItem(
+            value: voice,
+            child: Text(
+              '$voice (Polly)',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        );
       }
     } else {
-      items.add(const DropdownMenuItem(
-        value: 'default',
-        child: Text('Default System Voice', style: TextStyle(fontWeight: FontWeight.w500)),
-      ));
+      items.add(
+        const DropdownMenuItem(
+          value: 'default',
+          child: Text(
+            'Default System Voice',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
       for (final voice in _nativeVoices) {
         final name = voice['name'] ?? '';
-        items.add(DropdownMenuItem(
-          value: name,
-          child: Text(
-            name.length > 25 ? '${name.substring(0, 25)}...' : name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+        items.add(
+          DropdownMenuItem(
+            value: name,
+            child: Text(
+              name.length > 25 ? '${name.substring(0, 25)}...' : name,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
           ),
-        ));
+        );
       }
     }
 
     // Guard against currentVoice not being in items list
     final hasMatchingItem = items.any((item) => item.value == currentVoice);
-    final selectedValue = hasMatchingItem ? currentVoice : (isPolly ? 'Joanna' : 'default');
+    final selectedValue = hasMatchingItem
+        ? currentVoice
+        : (isPolly ? 'Joanna' : 'default');
 
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
@@ -384,7 +459,9 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -397,14 +474,25 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
                 Row(
                   children: [
                     Icon(icon, color: theme.colorScheme.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
-                Text(label, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Slider(
               value: value,
               min: min,

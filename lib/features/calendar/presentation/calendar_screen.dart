@@ -181,7 +181,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading calendar: $err')),
       ),
     );
@@ -251,7 +251,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: AppDimensions.stackMd),
+                SizedBox(width: AppDimensions.stackMd),
                 // Title and Timing
                 Expanded(
                   child: Column(
@@ -284,7 +284,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(
                         event.title,
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -292,7 +292,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         ),
                       ),
                       if (event.description != null && event.description!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           event.description!,
                           maxLines: 2,
@@ -320,12 +320,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.event_busy_outlined, size: 48, color: theme.colorScheme.secondary),
-          const SizedBox(height: AppDimensions.stackMd),
+          SizedBox(height: AppDimensions.stackMd),
           Text(
             'All Clear',
             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             'No academic events scheduled for this day.',
             style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),

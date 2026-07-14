@@ -5,7 +5,6 @@ import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
 import 'package:opencampus_lms/features/notifications/data/notification_repository.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
-import 'package:opencampus_lms/shared/models/notification.dart' as app_model;
 
 class WelcomeHeader extends ConsumerWidget {
   const WelcomeHeader({super.key});
@@ -30,7 +29,7 @@ class WelcomeHeader extends ConsumerWidget {
 
     final notificationsAsync = ref.watch(notificationsStreamProvider);
     final unreadCount = notificationsAsync.when(
-      data: (notifications) => (notifications as List<app_model.Notification>).where((n) => n.read == false).length,
+      data: (notifications) => (notifications).where((n) => n.read == false).length,
       loading: () => 0,
       error: (err, stack) => 0,
     );
@@ -50,7 +49,7 @@ class WelcomeHeader extends ConsumerWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(
                 displayName,
                 style: theme.textTheme.headlineLarge?.copyWith(
@@ -91,7 +90,7 @@ class WelcomeHeader extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppDimensions.stackMd),
+        SizedBox(width: AppDimensions.stackMd),
         // Notification bell routing to /notifications
         IconButton(
           onPressed: () => context.go('/notifications'),
@@ -114,7 +113,7 @@ class WelcomeHeader extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppDimensions.stackMd),
+        SizedBox(width: AppDimensions.stackMd),
         // Profile initials avatar routing to /profile
         Semantics(
           label: 'User Profile',

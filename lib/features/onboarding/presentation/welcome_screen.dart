@@ -20,7 +20,7 @@ class WelcomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -32,7 +32,7 @@ class WelcomeScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 'Welcome to OpenCampus LMS',
                 textAlign: TextAlign.center,
@@ -44,7 +44,7 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
                 textScaler: TextScaler.linear(settings.textScale),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'How would you like to experience the app today? You can always change this later in Settings.',
                 textAlign: TextAlign.center,
@@ -55,7 +55,7 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
                 textScaler: TextScaler.linear(settings.textScale),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Expanded(
                 child: ListView(
                   children: [
@@ -94,7 +94,7 @@ class WelcomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.push('/onboarding'),
                 style: ElevatedButton.styleFrom(
@@ -161,7 +161,7 @@ class _PresetCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(12),
               color: isSelected
-                  ? (isHighContrast ? Colors.yellow.withOpacity(0.1) : Theme.of(context).colorScheme.primaryContainer)
+                  ? (isHighContrast ? Colors.yellow.withValues(alpha: 0.1) : Theme.of(context).colorScheme.primaryContainer)
                   : Colors.transparent,
             ),
             child: Row(

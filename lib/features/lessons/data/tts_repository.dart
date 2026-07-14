@@ -15,9 +15,7 @@ class TtsRepository {
   // TODO: Move to env variables
   final String _supabaseFunctionsUrl = 'https://qczgiqusaftwmdtkvctn.supabase.co/functions/v1';
 
-  TtsRepository({required Dio dio, required FirebaseAuth auth})
-      : _dio = dio,
-        _auth = auth;
+  TtsRepository({required this._dio, required this._auth});
 
   Future<({String audioUrl, String marksUrl, String alignmentUrl})> getLessonAudioUrl({
     required String lessonId,

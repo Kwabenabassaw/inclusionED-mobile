@@ -26,10 +26,22 @@ Future<void> showVoiceCommandOverlay(
 
   // Start the recording BEFORE showing the sheet so the mic is live when the
   // user sees the overlay (matches the Google Assistant feel).
-  await controller.startListening(
-    engine: ref.read(speechEngineProvider),
-    parser: ref.read(fuzzyCommandInterpreterProvider),
-  );
+  try {
+    await controller.startListening(
+      engine: ref.read(speechEngineProvider),
+      parser: ref.read(fuzzyCommandInterpreterProvider),
+    );
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not start microphone. Please check permissions.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    return;
+  }
 
   if (!context.mounted) return;
 
@@ -153,20 +165,20 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // ── Main icon / animation ──────────────────────────────────────
             _buildStateIcon(context, data),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // ── Status label ───────────────────────────────────────────────
             _buildStatusLabel(context, data),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
 
             // ── Action buttons ─────────────────────────────────────────────
             _buildActionButtons(context, data, controller),
 
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
         ),
       ),
@@ -236,11 +248,11 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
             shape: BoxShape.circle,
             color: Colors.green.withValues(alpha: 0.15),
           ),
-          child: const Icon(Icons.check_circle_outline, size: 52, color: Colors.green),
+          child: Icon(Icons.check_circle_outline, size: 52, color: Colors.green),
         );
 
       case VoiceCommandState.idle:
-        return const SizedBox(width: 96, height: 96);
+        return SizedBox(width: 96, height: 96);
     }
   }
 
@@ -282,7 +294,7 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
           textAlign: TextAlign.center,
         ),
         if (sublabel != null) ...[
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
             sublabel,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -310,16 +322,16 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
             // Manual stop — tapping while listening transitions to processing
             FilledButton.icon(
               onPressed: controller.stopRecording,
-              icon: const Icon(Icons.stop),
-              label: const Text('Stop'),
+              icon: Icon(Icons.stop),
+              label: Text('Stop'),
             ),
             OutlinedButton.icon(
               onPressed: () {
                 controller.cancel();
                 Navigator.of(context).maybePop();
               },
-              icon: const Icon(Icons.close),
-              label: const Text('Cancel'),
+              icon: Icon(Icons.close),
+              label: Text('Cancel'),
             ),
           ],
         );
@@ -331,8 +343,8 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
             controller.cancel();
             Navigator.of(context).maybePop();
           },
-          icon: const Icon(Icons.close),
-          label: const Text('Cancel'),
+          icon: Icon(Icons.close),
+          label: Text('Cancel'),
         );
 
       case VoiceCommandState.result:
@@ -350,25 +362,25 @@ class _VoiceCommandSheetState extends ConsumerState<_VoiceCommandSheet>
                     parser: ref.read(fuzzyCommandInterpreterProvider),
                   );
                 },
-                icon: const Icon(Icons.mic),
-                label: const Text('Try Again'),
+                icon: Icon(Icons.mic),
+                label: Text('Try Again'),
               ),
               OutlinedButton.icon(
                 onPressed: () {
                   controller.cancel();
                   Navigator.of(context).maybePop();
                 },
-                icon: const Icon(Icons.close),
-                label: const Text('Dismiss'),
+                icon: Icon(Icons.close),
+                label: Text('Dismiss'),
               ),
             ],
           );
         }
         // Success — overlay will auto-dismiss via _dismissAndExecute
-        return const SizedBox.shrink();
+        return SizedBox.shrink();
 
       case VoiceCommandState.idle:
-        return const SizedBox.shrink();
+        return SizedBox.shrink();
     }
   }
 

@@ -72,9 +72,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
           
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               
 
 
@@ -84,7 +84,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 'Full Name',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -93,13 +93,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               
               Text(
                 'University Email',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -109,13 +109,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               
               Text(
                 'Student ID Number',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextFormField(
                 controller: _studentIdController,
                 decoration: InputDecoration(
@@ -125,13 +125,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               
               Text(
                 'Password',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -142,7 +142,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _handleSignUp(),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               
               if (authState.errorMessage != null) ...[
                 Text(
@@ -150,7 +150,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
               ],
               
               ElevatedButton(
@@ -162,11 +162,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: authState.isLoading 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Row(
                 children: [
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
@@ -177,7 +177,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               
               OutlinedButton(
                 onPressed: () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
@@ -196,7 +196,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               
               OutlinedButton(
                 onPressed: () {}, // Voice sign in
@@ -216,7 +216,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
               ),
               
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -231,16 +231,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ],
               ),
               
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
               Divider(color: Theme.of(context).colorScheme.outlineVariant),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Row(
                     children: [
                       Icon(Icons.help_outline, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'Need help?',
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -250,7 +250,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   Row(
                     children: [
                       Icon(Icons.visibility, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'View contrast',
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -259,7 +259,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
             ],
           ),
         ),

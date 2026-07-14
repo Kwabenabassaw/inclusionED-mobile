@@ -17,10 +17,13 @@ class CourseTasksTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (moduleId == null) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(AppDimensions.marginPage),
-          child: Text('No active module found.'),
+          child: Semantics(
+            label: 'No active module found.',
+            child: Text('No active module found.'),
+          ),
         ),
       );
     }
@@ -30,7 +33,12 @@ class CourseTasksTab extends ConsumerWidget {
     return asyncQuizzes.when(
       data: (quizzes) {
         if (quizzes.isEmpty) {
-          return const Center(child: Text('No upcoming quizzes.'));
+          return Center(
+            child: Semantics(
+              label: 'No upcoming quizzes.',
+              child: Text('No upcoming quizzes.'),
+            ),
+          );
         }
         return ListView.builder(
           shrinkWrap: true,
@@ -41,23 +49,25 @@ class CourseTasksTab extends ConsumerWidget {
             final quiz = quizzes[index];
             return Card(
               margin: const EdgeInsets.only(bottom: AppDimensions.stackMd),
-              child: ListTile(
-                leading: Icon(
-                  Icons.assignment_late,
-                  color: Theme.of(context).colorScheme.primary,
+              child: MergeSemantics(
+                child: ListTile(
+                  leading: Icon(
+                    Icons.assignment_late,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(quiz.title, style: Theme.of(context).textTheme.titleMedium),
+                  subtitle: Text('${quiz.timeLimit} mins • ${quiz.totalPoints} pts'),
+                  trailing: Icon(Icons.chevron_right),
+                  onTap: () {
+                    context.go('/courses/$courseId/quizzes/${quiz.id}');
+                  },
                 ),
-                title: Text(quiz.title, style: Theme.of(context).textTheme.titleMedium),
-                subtitle: Text('${quiz.timeLimit} mins • ${quiz.totalPoints} pts'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  context.go('/courses/$courseId/quizzes/${quiz.id}');
-                },
               ),
             );
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error loading quizzes: $e')),
     );
   }
