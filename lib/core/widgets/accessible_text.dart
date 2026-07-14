@@ -31,7 +31,6 @@ class AccessibleText extends ConsumerWidget {
       maxLines: maxLines,
       semanticsLabel: semanticsLabel ? text : null,
       style: (style ?? const TextStyle()).copyWith(
-        fontFamily: accessibilitySettings.fontFamily != 'System' ? accessibilitySettings.fontFamily : null,
         height: accessibilitySettings.lineSpacing,
       ),
     );

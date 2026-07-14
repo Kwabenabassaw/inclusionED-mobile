@@ -107,9 +107,9 @@ class _AccessibleReaderScreenState extends ConsumerState<AccessibleReaderScreen>
           final safeStart = start.clamp(0, text.length);
           final safeEnd = end.clamp(safeStart, text.length);
 
-          final normalStyle = TextStyle(
+          final baseStyle = Theme.of(context).textTheme.bodyLarge ?? const TextStyle();
+          final normalStyle = baseStyle.copyWith(
             fontSize: 18 * accessibilitySettings.textScale,
-            fontFamily: accessibilitySettings.fontFamily != 'System' ? accessibilitySettings.fontFamily : null,
             height: accessibilitySettings.lineSpacing,
             color: Theme.of(context).colorScheme.onSurface,
           );

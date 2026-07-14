@@ -9,9 +9,9 @@ import 'package:opencampus_lms/shared/models/quiz.dart';
 import 'package:opencampus_lms/features/courses/data/course_repository.dart';
 import 'package:opencampus_lms/shared/models/enrollment.dart';
 import 'package:opencampus_lms/features/modules/presentation/quiz_results_screen.dart';
-import 'package:opencampus_lms/features/accessibility/unified_tts_controller.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/accessibility/presentation/display_settings_bottom_sheet.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 // ─── Riverpod State Management for Voice ──────────────────────────────────────
 
@@ -146,17 +146,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   Timer? _timer;
   int _timeRemainingSeconds = 0;
 
-  // Accessibility State
-  final UnifiedTtsController _ttsController = UnifiedTtsController();
-  double get _fontScaleMultiplier => ref.watch(accessibilityProvider).textScale;
-  
-  // Highlight tracking
+  // TTS — use FlutterTts directly so setProgressHandler gives positions
+  // relative to the spoken text chunk (no buffer-offset mapping needed).
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _isSpeaking = false;
+
+  // Highlight state — positions are relative to question.text or the option text.
+  // _highlightChunk: 'question' | 'option_N' | ''
   int _highlightStart = 0;
   int _highlightEnd = 0;
-  int _questionOffsetStart = 0;
-  int _questionOffsetEnd = 0;
-  List<int> _optionOffsetStarts = [];
-  List<int> _optionOffsetEnds = [];
+  String _highlightChunk = '';
+  int _speakingOptionIndex = -1;
+
+  double get _fontScaleMultiplier => ref.watch(accessibilityProvider).textScale;
 
   // Mic pulse animation
   late AnimationController _pulseAnimController;
@@ -187,9 +189,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       if (_timeRemainingSeconds > 0) {
         setState(() => _timeRemainingSeconds--);
         if (_timeRemainingSeconds == 60) {
-          _ttsController.speak('One minute remaining.');
+          _flutterTts.speak('One minute remaining.');
         } else if (_timeRemainingSeconds == 10) {
-          _ttsController.speak('Ten seconds left.');
+          _flutterTts.speak('Ten seconds left.');
         }
       } else {
         _timer?.cancel();
@@ -199,26 +201,91 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   Future<void> _initTts() async {
-    await _ttsController.initialize();
-    _ttsController.onProgressUpdate = (start, end) {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+
+    // progressHandler gives (text, start, end, word) relative to what was spoken.
+    _flutterTts.setProgressHandler((String text, int start, int end, String word) {
       if (mounted) {
         setState(() {
           _highlightStart = start;
           _highlightEnd = end;
         });
       }
-    };
-    _ttsController.addListener(() {
-      if (mounted) setState(() {});
     });
+
+    _flutterTts.setCompletionHandler(() async {
+      if (!mounted) return;
+      // After preamble completes, speak the question text (with highlighting).
+      if (_highlightChunk == 'preamble') {
+        setState(() {
+          _highlightChunk = 'question';
+          _highlightStart = 0;
+          _highlightEnd = 0;
+        });
+        final q = widget.quiz.questions[_currentQuestionIndex];
+        await _flutterTts.speak(q.text);
+      } else if (_highlightChunk == 'question') {
+        // After question, speak options.
+        final q = widget.quiz.questions[_currentQuestionIndex];
+        final type = q.type.toUpperCase().replaceAll('-', '_');
+        if (type == 'MULTIPLE_CHOICE' && q.options != null && q.options!.isNotEmpty) {
+          setState(() {
+            _highlightChunk = 'option_0';
+            _speakingOptionIndex = 0;
+            _highlightStart = 0;
+            _highlightEnd = 0;
+          });
+          await _flutterTts.speak('Your options are. Option A: ${q.options![0]}');
+        } else {
+          _finishSpeaking();
+        }
+      } else if (_highlightChunk.startsWith('option_')) {
+        final q = widget.quiz.questions[_currentQuestionIndex];
+        final options = q.options ?? [];
+        final nextOpt = _speakingOptionIndex + 1;
+        if (nextOpt < options.length) {
+          final letter = String.fromCharCode(65 + nextOpt);
+          setState(() {
+            _highlightChunk = 'option_$nextOpt';
+            _speakingOptionIndex = nextOpt;
+            _highlightStart = 0;
+            _highlightEnd = 0;
+          });
+          await _flutterTts.speak('Option $letter: ${options[nextOpt]}');
+        } else {
+          _finishSpeaking();
+        }
+      } else {
+        _finishSpeaking();
+      }
+    });
+
+    _flutterTts.setErrorHandler((msg) {
+      debugPrint('FlutterTts quiz error: $msg');
+      _finishSpeaking();
+    });
+  }
+
+  void _finishSpeaking() {
+    if (mounted) {
+      setState(() {
+        _isSpeaking = false;
+        _highlightChunk = '';
+        _highlightStart = 0;
+        _highlightEnd = 0;
+        _speakingOptionIndex = -1;
+      });
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _timer?.cancel();
-    _ttsController.stop();
-    _ttsController.dispose();
+    _flutterTts.stop();
     _pulseAnimController.dispose();
     super.dispose();
   }
@@ -245,7 +312,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     }
     if (_isChangeCommand(lower)) {
       setState(() => _selectedAnswers.remove(_currentQuestionIndex));
-      _ttsController.speak('Answer cleared. Tap the mic to answer again.');
+      _flutterTts.speak('Answer cleared. Tap the mic to answer again.');
       return;
     }
     if (_isPlayCommand(lower)) {
@@ -289,7 +356,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     final hasAnswer =
         _selectedAnswers[_currentQuestionIndex]?.isNotEmpty == true;
     if (!hasAnswer) {
-      _ttsController.speak('Please select an answer first.');
+      _flutterTts.speak('Please select an answer first.');
       return;
     }
     _nextQuestion();
@@ -312,7 +379,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         setState(() => _selectedAnswers[_currentQuestionIndex] = matched);
         _announceSelection(matched);
       } else {
-        _ttsController.speak(
+        _flutterTts.speak(
           "I didn't catch that. Please tap the mic and say a letter like A, B, C, or repeat the option.",
         );
       }
@@ -329,12 +396,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         setState(() => _selectedAnswers[_currentQuestionIndex] = finalMatch);
         _announceSelection(finalMatch);
       } else {
-        _ttsController.speak('Please tap the mic and say true or false.');
+        _flutterTts.speak('Please tap the mic and say true or false.');
       }
     } else {
       // short-answer / fill-blank: just transcribe
       setState(() => _selectedAnswers[_currentQuestionIndex] = voiceText);
-      _ttsController.speak('Recorded: $voiceText.');
+      _flutterTts.speak('Recorded: $voiceText.');
     }
   }
 
@@ -401,64 +468,45 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         ? 'Great! You selected $selectedOption. Tap mic and say submit to finish.'
         : 'Great! You selected $selectedOption. Tap mic and say next to continue.';
 
-    _ttsController.speak(confirmText);
+    _flutterTts.speak(confirmText);
   }
 
   // ─── Play button ────────────────────────────────────────────────────────────
 
-  void _playQuestionAudio(QuizQuestion question, {bool forcePlay = false}) {
-    if (_ttsController.isPlaying && !forcePlay) {
-      _ttsController.stop();
-      setState(() {
-        _highlightStart = 0;
-        _highlightEnd = 0;
-      });
-    } else {
-      if (_ttsController.isPlaying) _ttsController.stop();
-      setState(() {
-        _highlightStart = 0;
-        _highlightEnd = 0;
-        _questionOffsetStart = 0;
-        _questionOffsetEnd = 0;
-        _optionOffsetStarts.clear();
-        _optionOffsetEnds.clear();
-      });
-
-      final buffer = StringBuffer();
-      
-      buffer.write('Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}. ');
-      
-      _questionOffsetStart = buffer.length;
-      buffer.write(question.ttsReadout ?? question.text);
-      _questionOffsetEnd = buffer.length;
-
-      final type = question.type.toUpperCase().replaceAll('-', '_');
-      if (type == 'MULTIPLE_CHOICE' && question.options != null) {
-        buffer.write(' Your options are: ');
-        for (int i = 0; i < question.options!.length; i++) {
-          final letter = String.fromCharCode(65 + i);
-          buffer.write('Option $letter: ');
-          _optionOffsetStarts.add(buffer.length);
-          buffer.write(question.options![i]);
-          _optionOffsetEnds.add(buffer.length);
-          buffer.write('. ');
-        }
-      } else if (type == 'TRUE_FALSE') {
-        buffer.write(' Is this true or false?');
-        _optionOffsetStarts.add(_questionOffsetStart); // Provide dummy fallback if needed, or handle specially
-        _optionOffsetEnds.add(_questionOffsetStart);
-      }
-      
-      buffer.write(' Tap the microphone button at the bottom to answer.');
-      _ttsController.speak(buffer.toString());
+  Future<void> _playQuestionAudio(QuizQuestion question,
+      {bool forcePlay = false}) async {
+    if (_isSpeaking && !forcePlay) {
+      // Stop playback
+      await _flutterTts.stop();
+      _finishSpeaking();
+      return;
     }
-    setState(() {});
+
+    // Stop any ongoing speech before starting fresh.
+    await _flutterTts.stop();
+
+    setState(() {
+      _isSpeaking = true;
+      _highlightChunk = 'preamble';
+      _highlightStart = 0;
+      _highlightEnd = 0;
+      _speakingOptionIndex = -1;
+    });
+
+    // Step 1: Speak the preamble (no highlighting — handled via setCompletionHandler
+    // which chains into speaking question.text next).
+    final preamble =
+        'Question ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}.';
+    await _flutterTts.speak(preamble);
   }
 
   // ─── Navigation & Submit ────────────────────────────────────────────────────
 
   void _nextQuestion() {
+    _flutterTts.stop();
     setState(() {
+      _isSpeaking = false;
+      _highlightChunk = '';
       _highlightStart = 0;
       _highlightEnd = 0;
     });
@@ -473,7 +521,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   void _previousQuestion() {
+    _flutterTts.stop();
     setState(() {
+      _isSpeaking = false;
+      _highlightChunk = '';
       _highlightStart = 0;
       _highlightEnd = 0;
     });
@@ -700,12 +751,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               iconSize: 32,
               onPressed: () => _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]),
               icon: Icon(
-                _ttsController.isPlaying
+                _isSpeaking
                     ? Icons.stop_circle
                     : Icons.play_circle_fill,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              tooltip: _ttsController.isPlaying ? 'Stop' : 'Play',
+              tooltip: _isSpeaking ? 'Stop' : 'Play',
             ),
           ),
           const SizedBox(width: 16),
@@ -742,8 +793,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                   child: FloatingActionButton(
                     onPressed: () {
                       // Stop any reading TTS so the mic isn't confused
-                      if (_ttsController.isPlaying) {
-                        _ttsController.stop();
+                      if (_isSpeaking) {
+                        _flutterTts.stop();
+                        _finishSpeaking();
                       }
                       if (isListening) {
                         ref.read(quizVoiceControllerProvider.notifier).stopListening();
@@ -775,6 +827,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   Widget _buildQuestionPage(QuizQuestion question, int index) {
+    // Only show highlight for the question currently being spoken (active page).
+    final bool isActive = index == _currentQuestionIndex;
     return SingleChildScrollView(
       padding: const EdgeInsets.only(
         left: AppDimensions.marginPage,
@@ -804,11 +858,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             ],
           ),
           const SizedBox(height: AppDimensions.stackMd),
+          // For question text: highlight when _highlightChunk == 'question'.
+          // _highlightStart/_End are direct positions in question.text from FlutterTts.
           _buildHighlightedText(
             question.text,
             Theme.of(context).textTheme.headlineSmall ?? const TextStyle(),
-            _questionOffsetStart,
-            _questionOffsetEnd,
+            chunkName: 'question',
+            isActive: isActive,
           ),
           if (question.altText != null && question.altText!.isNotEmpty) ...[
             const SizedBox(height: AppDimensions.stackSm),
@@ -829,6 +885,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   Widget _buildInputForQuestionType(QuizQuestion question, int index) {
     final answer = _selectedAnswers[index] ?? '';
     final type = question.type.toUpperCase().replaceAll('-', '_');
+    // Only apply highlight offsets if this is the currently active question.
+    final bool isActive = index == _currentQuestionIndex;
 
     if (type == 'MULTIPLE_CHOICE') {
       final options = question.options ?? [];
@@ -846,10 +904,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               isSelected: isSelected,
               fontScaleMultiplier: _fontScaleMultiplier,
               onTap: () => setState(() => _selectedAnswers[index] = optionText),
-              highlightStartOffset: optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
-              highlightEndOffset: optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
-              highlightStartGlobal: _highlightStart,
-              highlightEndGlobal: _highlightEnd,
+              // For options: highlight when _highlightChunk == 'option_N'.
+              // Positions are relative to 'Option X: [optionText]' spoken string.
+              // We extract the offset of optionText within that string:
+              //   'Option A: '.length = 10, so optionText starts at 10.
+              highlightChunkName: isActive ? 'option_$optIndex' : '',
+              optionTextPrefixLen: 10, // 'Option A: '.length
+              highlightStart: _highlightStart,
+              highlightEnd: _highlightEnd,
+              currentChunk: _highlightChunk,
             ),
           );
         }),
@@ -857,9 +920,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     } else if (type == 'TRUE_FALSE') {
       return Column(
         children: [
-          _buildTrueFalseButton(index, answer, 'True', 0),
+          _buildTrueFalseButton(index, answer, 'True', 0, isActive),
           const SizedBox(height: AppDimensions.stackMd),
-          _buildTrueFalseButton(index, answer, 'False', 1),
+          _buildTrueFalseButton(index, answer, 'False', 1, isActive),
         ],
       );
     } else {
@@ -888,7 +951,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   Widget _buildTrueFalseButton(
-      int questionIndex, String currentAnswer, String value, int optIndex) {
+      int questionIndex, String currentAnswer, String value, int optIndex, bool isActive) {
     final isSelected = currentAnswer == value;
     return Semantics(
       button: true,
@@ -913,71 +976,74 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       child: Row(
         children: [
           Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
+            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurfaceVariant,
             size: 24 * _fontScaleMultiplier,
           ),
           SizedBox(width: 12 * _fontScaleMultiplier),
-          _buildHighlightedText(
+          Text(
             value,
-            TextStyle(
+            style: TextStyle(
               color: isSelected
                   ? Theme.of(context).colorScheme.onPrimaryContainer
                   : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 16 * _fontScaleMultiplier,
             ),
-            optIndex < _optionOffsetStarts.length ? _optionOffsetStarts[optIndex] : 0,
-            optIndex < _optionOffsetEnds.length ? _optionOffsetEnds[optIndex] : 0,
           ),
         ],
       ),
     ));
   }
 
+  /// Builds text with a yellow highlight on the current word being spoken.
+  ///
+  /// [chunkName] identifies which TTS chunk this text belongs to (e.g. 'question').
+  /// Highlighting is only active when [_highlightChunk] matches [chunkName].
+  /// [_highlightStart] and [_highlightEnd] are character positions directly from
+  /// FlutterTts.setProgressHandler — they are relative to the text that was spoken,
+  /// which for the question chunk IS question.text itself.
   Widget _buildHighlightedText(
-      String text, TextStyle baseStyle, int localStart, int localEnd) {
-    // No highlight: range is unset, or the global highlight doesn't overlap this text window
-    final bool notActive = _highlightEnd <= _highlightStart ||
-        _highlightEnd <= localStart ||
-        _highlightStart >= localEnd ||
-        (localStart == 0 && localEnd == 0);
-    if (notActive) {
+      String text,
+      TextStyle baseStyle, {
+      required String chunkName,
+      required bool isActive,
+  }) {
+    final bool shouldHighlight = isActive &&
+        _highlightChunk == chunkName &&
+        _highlightEnd > _highlightStart &&
+        _highlightStart < text.length;
+
+    if (!shouldHighlight) {
       return Text(text,
           style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
     }
 
-    final int startHighlight =
-        (_highlightStart - localStart).clamp(0, text.length);
-    final int endHighlight = (_highlightEnd - localStart).clamp(0, text.length);
+    final int start = _highlightStart.clamp(0, text.length);
+    final int end = _highlightEnd.clamp(0, text.length);
 
-    if (startHighlight >= endHighlight) {
+    if (start >= end) {
       return Text(text,
           style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
     }
-
-    final beforeText = text.substring(0, startHighlight);
-    final activeWord = text.substring(startHighlight, endHighlight);
-    final afterText = text.substring(endHighlight);
 
     return RichText(
       textScaler: TextScaler.linear(_fontScaleMultiplier),
       text: TextSpan(
         style: baseStyle,
         children: [
-          TextSpan(text: beforeText),
+          TextSpan(text: text.substring(0, start)),
           TextSpan(
-            text: activeWord,
+            text: text.substring(start, end),
             style: baseStyle.copyWith(
               color: Colors.black,
               backgroundColor: const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,
             ),
           ),
-          TextSpan(text: afterText),
+          TextSpan(text: text.substring(end)),
         ],
       ),
     );
@@ -1026,10 +1092,12 @@ class _OptionButton extends StatefulWidget {
   final bool isSelected;
   final double fontScaleMultiplier;
   final VoidCallback onTap;
-  final int highlightStartOffset;
-  final int highlightEndOffset;
-  final int highlightStartGlobal;
-  final int highlightEndGlobal;
+  // Chunk-based highlight props
+  final String highlightChunkName;
+  final String currentChunk;
+  final int highlightStart;
+  final int highlightEnd;
+  final int optionTextPrefixLen; // e.g., 'Option A: '.length = 10
 
   const _OptionButton({
     required this.letter,
@@ -1037,10 +1105,11 @@ class _OptionButton extends StatefulWidget {
     required this.isSelected,
     required this.fontScaleMultiplier,
     required this.onTap,
-    this.highlightStartOffset = 0,
-    this.highlightEndOffset = 0,
-    this.highlightStartGlobal = 0,
-    this.highlightEndGlobal = 0,
+    this.highlightChunkName = '',
+    this.currentChunk = '',
+    this.highlightStart = 0,
+    this.highlightEnd = 0,
+    this.optionTextPrefixLen = 0,
   });
 
   @override
@@ -1165,46 +1234,49 @@ class _OptionButtonState extends State<_OptionButton>
   }
 
   Widget _buildOptionHighlightedText(String text, TextStyle baseStyle) {
-    final bool notActive = widget.highlightEndGlobal <= widget.highlightStartGlobal ||
-        widget.highlightEndGlobal <= widget.highlightStartOffset ||
-        widget.highlightStartGlobal >= widget.highlightEndOffset ||
-        (widget.highlightStartOffset == 0 && widget.highlightEndOffset == 0);
-    if (notActive) {
+    // Only highlight when this option's chunk is the currently active chunk.
+    final bool isActive = widget.highlightChunkName.isNotEmpty &&
+        widget.currentChunk == widget.highlightChunkName &&
+        widget.highlightEnd > widget.highlightStart;
+
+    if (!isActive) {
       return Text(text,
-          style: baseStyle, textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+          style: baseStyle,
+          textScaler: TextScaler.linear(widget.fontScaleMultiplier));
     }
 
-    final int startHighlight =
-        (widget.highlightStartGlobal - widget.highlightStartOffset).clamp(0, text.length);
-    final int endHighlight =
-        (widget.highlightEndGlobal - widget.highlightStartOffset).clamp(0, text.length);
+    // The FlutterTts progress positions are relative to the full spoken string
+    // e.g. 'Option A: integer age;' — so we subtract the prefix length to get
+    // positions within the visible option text.
+    final int start =
+        (widget.highlightStart - widget.optionTextPrefixLen).clamp(0, text.length);
+    final int end =
+        (widget.highlightEnd - widget.optionTextPrefixLen).clamp(0, text.length);
 
-    if (startHighlight >= endHighlight) {
+    if (start >= end) {
       return Text(text,
-          style: baseStyle, textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+          style: baseStyle,
+          textScaler: TextScaler.linear(widget.fontScaleMultiplier));
     }
-
-    final beforeText = text.substring(0, startHighlight);
-    final activeWord = text.substring(startHighlight, endHighlight);
-    final afterText = text.substring(endHighlight);
 
     return RichText(
       textScaler: TextScaler.linear(widget.fontScaleMultiplier),
       text: TextSpan(
         style: baseStyle,
         children: [
-          TextSpan(text: beforeText),
+          TextSpan(text: text.substring(0, start)),
           TextSpan(
-            text: activeWord,
+            text: text.substring(start, end),
             style: baseStyle.copyWith(
               color: Colors.black,
               backgroundColor: const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,
             ),
           ),
-          TextSpan(text: afterText),
+          TextSpan(text: text.substring(end)),
         ],
       ),
     );
   }
 }
+

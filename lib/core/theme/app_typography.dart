@@ -16,6 +16,12 @@ class AppTypography {
       case 'Lexend':
         baseStyle = GoogleFonts.lexend();
         break;
+      case 'Georgia':
+        baseStyle = GoogleFonts.lora(); // Use Lora as the highly legible Georgia alternative
+        break;
+      case 'System':
+        baseStyle = const TextStyle(); // Default system font
+        break;
       case 'Atkinson Hyperlegible':
       default:
         baseStyle = GoogleFonts.atkinsonHyperlegible();
