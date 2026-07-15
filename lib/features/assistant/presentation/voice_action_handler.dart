@@ -211,28 +211,28 @@ class VoiceActionHandler {
         accessibilityController.toggleDarkMode();
         // Since toggle just flips it, we should explicitly set it to true if we had a setter.
         // For robustness, check if it's already on:
-        if (!accessibilityController.state.darkMode) {
+        if (!ref.read(accessibilityProvider).darkMode) {
           accessibilityController.toggleDarkMode();
         }
         await fallbackTts.speak("Dark mode enabled.");
         break;
 
       case 'disableDarkMode':
-        if (accessibilityController.state.darkMode) {
+        if (ref.read(accessibilityProvider).darkMode) {
           accessibilityController.toggleDarkMode();
         }
         await fallbackTts.speak("Dark mode disabled.");
         break;
 
       case 'enableHighContrast':
-        if (!accessibilityController.state.highContrast) {
+        if (!ref.read(accessibilityProvider).highContrast) {
           accessibilityController.toggleHighContrast();
         }
         await fallbackTts.speak("High contrast mode enabled.");
         break;
 
       case 'disableHighContrast':
-        if (accessibilityController.state.highContrast) {
+        if (ref.read(accessibilityProvider).highContrast) {
           accessibilityController.toggleHighContrast();
         }
         await fallbackTts.speak("High contrast mode disabled.");

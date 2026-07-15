@@ -113,26 +113,57 @@ class _MyCoursesTab extends ConsumerWidget {
         Expanded(
           child: asyncCourses.when(
             data: (courses) {
-              if (courses.isEmpty) {
-                return _buildEmptyState(context, statusFilter);
+              Future<void> onRefresh() async {
+                try {
+                  switch (statusFilter) {
+                    case 'PENDING':
+                      await ref.refresh(pendingCoursesProvider.future);
+                      break;
+                    case 'COMPLETED':
+                      await ref.refresh(completedCoursesProvider.future);
+                      break;
+                    default:
+                      await ref.refresh(activeCoursesProvider.future);
+                      break;
+                  }
+                } catch (_) {}
               }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
-                itemCount: courses.length,
-                itemBuilder: (context, index) {
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 300 + (index * 100).clamp(0, 400)),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Transform.translate(
-                        offset: Offset(0, 30 * (1 - value)),
-                        child: Opacity(opacity: value, child: child),
-                      );
-                    },
-                    child: _CourseCard(course: courses[index], isEnrolled: true),
-                  );
-                },
+
+              if (courses.isEmpty) {
+                return RefreshIndicator(
+                  onRefresh: onRefresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: _buildEmptyState(context, statusFilter),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: onRefresh,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
+                  itemCount: courses.length,
+                  itemBuilder: (context, index) {
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 300 + (index * 100).clamp(0, 400)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Transform.translate(
+                          offset: Offset(0, 30 * (1 - value)),
+                          child: Opacity(opacity: value, child: child),
+                        );
+                      },
+                      child: _CourseCard(course: courses[index], isEnrolled: true),
+                    );
+                  },
+                ),
               );
             },
             loading: () => Center(child: CircularProgressIndicator()),
@@ -277,6 +308,12 @@ class _CatalogTab extends ConsumerWidget {
         Expanded(
           child: asyncCourses.when(
             data: (courses) {
+              Future<void> onRefresh() async {
+                try {
+                  await ref.refresh(availableCoursesProvider.future);
+                } catch (_) {}
+              }
+
               final filtered = courses.where((c) {
                 final matchName = c.name.toLowerCase().contains(searchQuery.toLowerCase());
                 final matchCode = c.code.toLowerCase().contains(searchQuery.toLowerCase());
@@ -284,45 +321,60 @@ class _CatalogTab extends ConsumerWidget {
               }).toList();
 
               if (filtered.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.marginPage),
-                    child: Semantics(
-                      label: 'No courses match your search',
-                      excludeSemantics: true,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off, size: 48, color: theme.colorScheme.secondary),
-                          SizedBox(height: AppDimensions.stackMd),
-                          Text(
-                            'No courses match your search',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                return RefreshIndicator(
+                  onRefresh: onRefresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppDimensions.marginPage),
+                            child: Semantics(
+                              label: 'No courses match your search',
+                              excludeSemantics: true,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off, size: 48, color: theme.colorScheme.secondary),
+                                  SizedBox(height: AppDimensions.stackMd),
+                                  Text(
+                                    'No courses match your search',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 300 + (index * 100).clamp(0, 400)),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Transform.translate(
-                        offset: Offset(0, 30 * (1 - value)),
-                        child: Opacity(opacity: value, child: child),
-                      );
-                    },
-                    child: _CourseCard(course: filtered[index], isEnrolled: false),
-                  );
-                },
+              return RefreshIndicator(
+                onRefresh: onRefresh,
+                child: ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 300 + (index * 100).clamp(0, 400)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Transform.translate(
+                          offset: Offset(0, 30 * (1 - value)),
+                          child: Opacity(opacity: value, child: child),
+                        );
+                      },
+                      child: _CourseCard(course: filtered[index], isEnrolled: false),
+                    );
+                  },
+                ),
               );
             },
             loading: () => Center(child: CircularProgressIndicator()),

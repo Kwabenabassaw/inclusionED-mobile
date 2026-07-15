@@ -109,28 +109,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
           body: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(height: 8),
-                      _buildProfileHeader(context, userProfile),
-                      SizedBox(height: 24),
-                      _buildTabBar(theme),
-                      SizedBox(height: 16),
-                      SizedBox(
-                        height: 520, // Constrain size to accommodate tab view items cleanly
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildAccessibilityTab(context),
-                            _buildSettingsTab(context),
-                          ],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(userProfileProvider);
+                    // Add a small delay for UI feedback
+                    await Future.delayed(const Duration(milliseconds: 500));
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(height: 8),
+                        _buildProfileHeader(context, userProfile),
+                        SizedBox(height: 24),
+                        _buildTabBar(theme),
+                        SizedBox(height: 16),
+                        SizedBox(
+                          height: 520, // Constrain size to accommodate tab view items cleanly
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildAccessibilityTab(context),
+                              _buildSettingsTab(context),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 24),
-                    ],
+                        SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

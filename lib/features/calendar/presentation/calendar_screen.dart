@@ -78,107 +78,119 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
           final eventsForSelectedDay = getEventsForDay(_selectedDay!);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Calendar Card Wrapper
-              GlassCard(
-                margin: const EdgeInsets.all(AppDimensions.marginPage),
-                padding: const EdgeInsets.all(8.0),
-                borderRadius: AppDimensions.radiusLg,
-                child: TableCalendar<CalendarEvent>(
-                    firstDay: DateTime.utc(2025, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: _focusedDay,
-                    calendarFormat: _calendarFormat,
-                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                    onDaySelected: (selectedDay, focusedDay) {
-                      if (!isSameDay(_selectedDay, selectedDay)) {
-                        setState(() {
-                          _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-                          _focusedDay = focusedDay;
-                        });
-                      }
-                    },
-                    onFormatChanged: (format) {
-                      if (_calendarFormat != format) {
-                        setState(() {
-                          _calendarFormat = format;
-                        });
-                      }
-                    },
-                    onPageChanged: (focusedDay) {
-                      _focusedDay = focusedDay;
-                    },
-                    eventLoader: getEventsForDay,
-                    calendarStyle: CalendarStyle(
-                      markerSize: 6,
-                      markersMaxCount: 3,
-                      markerDecoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
+          return RefreshIndicator(
+            onRefresh: () async {
+              try {
+                await ref.refresh(upcomingEventsProvider.future);
+              } catch (_) {}
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: GlassCard(
+                    margin: const EdgeInsets.all(AppDimensions.marginPage),
+                    padding: const EdgeInsets.all(8.0),
+                    borderRadius: AppDimensions.radiusLg,
+                    child: TableCalendar<CalendarEvent>(
+                      firstDay: DateTime.utc(2025, 1, 1),
+                      lastDay: DateTime.utc(2030, 12, 31),
+                      focusedDay: _focusedDay,
+                      calendarFormat: _calendarFormat,
+                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        if (!isSameDay(_selectedDay, selectedDay)) {
+                          setState(() {
+                            _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+                            _focusedDay = focusedDay;
+                          });
+                        }
+                      },
+                      onFormatChanged: (format) {
+                        if (_calendarFormat != format) {
+                          setState(() {
+                            _calendarFormat = format;
+                          });
+                        }
+                      },
+                      onPageChanged: (focusedDay) {
+                        _focusedDay = focusedDay;
+                      },
+                      eventLoader: getEventsForDay,
+                      calendarStyle: CalendarStyle(
+                        markerSize: 6,
+                        markersMaxCount: 3,
+                        markerDecoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        selectedDecoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        selectedTextStyle: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        todayDecoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        todayTextStyle: TextStyle(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      selectedDecoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      selectedTextStyle: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      todayDecoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      todayTextStyle: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
+                      headerStyle: HeaderStyle(
+                        formatButtonVisible: true,
+                        formatButtonDecoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.surfaceContainerHighest, width: 1.5),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                        ),
+                        formatButtonPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        formatButtonTextStyle: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        titleCentered: true,
+                        titleTextStyle: theme.textTheme.titleMedium!.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    headerStyle: HeaderStyle(
-                      formatButtonVisible: true,
-                      formatButtonDecoration: BoxDecoration(
-                        border: Border.all(color: theme.colorScheme.surfaceContainerHighest, width: 1.5),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                      ),
-                      formatButtonPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      formatButtonTextStyle: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      titleCentered: true,
-                      titleTextStyle: theme.textTheme.titleMedium!.copyWith(
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage, vertical: 8),
+                    child: Text(
+                      'Events on this day (${eventsForSelectedDay.length})',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-              
-              // Header listing events count
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage, vertical: 8),
-                child: Text(
-                  'Events on this day (${eventsForSelectedDay.length})',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              
-              // Events List View
-              Expanded(
-                child: eventsForSelectedDay.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
-                        itemCount: eventsForSelectedDay.length,
-                        itemBuilder: (context, index) {
+                if (eventsForSelectedDay.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildEmptyState(context),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
                           final event = eventsForSelectedDay[index];
                           return _buildEventCard(context, event);
                         },
+                        childCount: eventsForSelectedDay.length,
                       ),
-              ),
-            ],
+                    ),
+                  ),
+              ],
+            ),
           );
         },
         loading: () => Center(child: CircularProgressIndicator()),

@@ -90,31 +90,48 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CourseBanner(
-                  course: course,
-                  progressPercent: progressPercent,
-                  currentModuleId: currentModule?.id,
-                ),
-                SizedBox(height: AppDimensions.stackLg),
-                CourseNavigationChips(
-                  selectedSection: _selectedSection,
-                  onSectionSelected: (section) {
-                    setState(() {
-                      _selectedSection = section;
-                    });
-                  },
-                ),
-                SizedBox(height: AppDimensions.stackXl),
-                
-                // Render content based on selected section
-                _buildSectionContent(course, currentModule, enrollment),
-                
-                SizedBox(height: AppDimensions.stackXl * 2),
-              ],
+          body: RefreshIndicator(
+            onRefresh: () async {
+              // Invalidate stream providers
+              ref.invalidate(activeEnrollmentStreamProvider(widget.courseId));
+              // We could also invalidate child tab providers here if imported, but usually 
+              // Riverpod's auto-dispose handles those when they're unused, and 
+              // refreshing the main course/modules is the primary goal.
+
+              try {
+                await Future.wait([
+                  ref.refresh(courseProvider(widget.courseId).future),
+                  ref.refresh(courseModulesProvider(widget.courseId).future),
+                ]);
+              } catch (_) {}
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CourseBanner(
+                    course: course,
+                    progressPercent: progressPercent,
+                    currentModuleId: currentModule?.id,
+                  ),
+                  SizedBox(height: AppDimensions.stackLg),
+                  CourseNavigationChips(
+                    selectedSection: _selectedSection,
+                    onSectionSelected: (section) {
+                      setState(() {
+                        _selectedSection = section;
+                      });
+                    },
+                  ),
+                  SizedBox(height: AppDimensions.stackXl),
+                  
+                  // Render content based on selected section
+                  _buildSectionContent(course, currentModule, enrollment),
+                  
+                  SizedBox(height: AppDimensions.stackXl * 2),
+                ],
+              ),
             ),
           ),
         );

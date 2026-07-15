@@ -73,20 +73,40 @@ class NotificationsScreen extends ConsumerWidget {
       ),
       body: notificationsAsync.when(
         data: (notifications) {
-          if (notifications.isEmpty) {
-            return _buildEmptyState(context);
+          Future<void> onRefresh() async {
+            ref.invalidate(notificationsStreamProvider);
+            await Future.delayed(const Duration(milliseconds: 500));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage, vertical: AppDimensions.stackMd),
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
-              final notification = notifications[index];
-              return _NotificationCard(
-                notification: notification,
-                timeAgo: _formatTimeAgo(notification.createdAt),
-              );
-            },
+          if (notifications.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: onRefresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: _buildEmptyState(context),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: onRefresh,
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.marginPage, vertical: AppDimensions.stackMd),
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                final notification = notifications[index];
+                return _NotificationCard(
+                  notification: notification,
+                  timeAgo: _formatTimeAgo(notification.createdAt),
+                );
+              },
+            ),
           );
         },
         loading: () => Center(child: CircularProgressIndicator()),
