@@ -11,7 +11,7 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 import 'package:opencampus_lms/firebase_options.dart';
 import 'package:responsive_scaler/responsive_scaler.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-
+import 'package:opencampus_lms/features/notifications/data/fcm_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
