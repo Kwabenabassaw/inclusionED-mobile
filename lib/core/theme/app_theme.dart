@@ -83,6 +83,56 @@ class AppTheme {
         ),
         margin: const EdgeInsets.symmetric(vertical: AppDimensions.stackSm),
       ),
+      extensions: [
+        AccessibilityThemeExtension(
+          quizCorrectColor: colorScheme.brightness == Brightness.dark ? const Color(0xFF81C784) : const Color(0xFF4CAF50), // Green 300 / 500
+          quizIncorrectColor: colorScheme.brightness == Brightness.dark ? const Color(0xFFE57373) : const Color(0xFFF44336), // Red 300 / 500
+          focusRingColor: const Color(0xFFFFD54F), // Focus Gold
+          touchTargetMargin: settings.touchTargetMargin,
+        ),
+      ],
+    );
+  }
+}
+
+class AccessibilityThemeExtension extends ThemeExtension<AccessibilityThemeExtension> {
+  final Color quizCorrectColor;
+  final Color quizIncorrectColor;
+  final Color focusRingColor;
+  final double touchTargetMargin;
+
+  const AccessibilityThemeExtension({
+    required this.quizCorrectColor,
+    required this.quizIncorrectColor,
+    required this.focusRingColor,
+    required this.touchTargetMargin,
+  });
+
+  @override
+  AccessibilityThemeExtension copyWith({
+    Color? quizCorrectColor,
+    Color? quizIncorrectColor,
+    Color? focusRingColor,
+    double? touchTargetMargin,
+  }) {
+    return AccessibilityThemeExtension(
+      quizCorrectColor: quizCorrectColor ?? this.quizCorrectColor,
+      quizIncorrectColor: quizIncorrectColor ?? this.quizIncorrectColor,
+      focusRingColor: focusRingColor ?? this.focusRingColor,
+      touchTargetMargin: touchTargetMargin ?? this.touchTargetMargin,
+    );
+  }
+
+  @override
+  AccessibilityThemeExtension lerp(ThemeExtension<AccessibilityThemeExtension>? other, double t) {
+    if (other is! AccessibilityThemeExtension) {
+      return this;
+    }
+    return AccessibilityThemeExtension(
+      quizCorrectColor: Color.lerp(quizCorrectColor, other.quizCorrectColor, t)!,
+      quizIncorrectColor: Color.lerp(quizIncorrectColor, other.quizIncorrectColor, t)!,
+      focusRingColor: Color.lerp(focusRingColor, other.focusRingColor, t)!,
+      touchTargetMargin: touchTargetMargin + (other.touchTargetMargin - touchTargetMargin) * t,
     );
   }
 }

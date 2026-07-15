@@ -113,10 +113,8 @@ class CourseBanner extends StatelessWidget {
                   value: '${(progressPercent * 100).toInt()} percent',
                   child: LinearProgressIndicator(
                     value: progressPercent,
-                    backgroundColor: hasImage
-                        ? Colors.white.withValues(alpha: 0.2)
-                        : theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.15),
-                    color: hasImage ? Colors.greenAccent : theme.colorScheme.primary,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    color: theme.colorScheme.primary,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
                   ),

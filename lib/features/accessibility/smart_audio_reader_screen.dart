@@ -48,7 +48,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
 
   List<TextSpan> _buildHighlightedText() {
     if (!_ttsController.isPlaying || _highlightEnd == 0) {
-      return [TextSpan(text: widget.textToRead, style: const TextStyle(color: Color(0xFF1F2937)))];
+      return [TextSpan(text: widget.textToRead, style: TextStyle(color: Theme.of(context).colorScheme.onSurface))];
     }
 
     // Safety check for indices
@@ -62,16 +62,16 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
     String afterText = widget.textToRead.substring(hEnd);
 
     return [
-      TextSpan(text: beforeText, style: const TextStyle(color: Color(0xFF1F2937))),
+      TextSpan(text: beforeText, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
       TextSpan(
         text: activeWord,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.black,
-          backgroundColor: Color(0xFFFDE047), // Yellow accessibility highlight
+          backgroundColor: const Color(0xFFFDE047), // Yellow accessibility highlight
           fontWeight: FontWeight.bold,
         ),
       ),
-      TextSpan(text: afterText, style: const TextStyle(color: Color(0xFF1F2937))),
+      TextSpan(text: afterText, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
     ];
   }
 
@@ -147,7 +147,7 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text("Accessible Reader"),
         elevation: 0,

@@ -4,13 +4,13 @@ import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:opencampus_lms/core/providers/voice_providers.dart';
-import 'package:opencampus_lms/core/routing/app_router.dart';
 import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
 import 'package:opencampus_lms/features/assistant/data/ai_chat_service.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
   final String? courseId;
-  const AssistantScreen({super.key, this.courseId});
+  final String? initialPrompt;
+  const AssistantScreen({super.key, this.courseId, this.initialPrompt});
 
   @override
   ConsumerState<AssistantScreen> createState() => _AssistantScreenState();
@@ -31,6 +31,11 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialPrompt != null && widget.initialPrompt!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _sendMessage(overrideText: widget.initialPrompt);
+      });
+    }
   }
 
   StreamSubscription<String>? _transcriptSub;

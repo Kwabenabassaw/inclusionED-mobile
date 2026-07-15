@@ -90,27 +90,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             final result = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                backgroundColor: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 title: Text(
                   'Enable Faster Login?',
-                  style: TextStyle(color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.primary, fontFamily: settings.fontFamily),
+                  style: TextStyle(color: Theme.of(context).colorScheme.primary, fontFamily: settings.fontFamily),
                   textScaler: TextScaler.linear(settings.textScale),
                 ),
                 content: Text(
                   'Would you like to use Face ID or Fingerprint to sign in faster next time?',
-                  style: TextStyle(color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.onSurface, fontFamily: settings.fontFamily),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: settings.fontFamily),
                   textScaler: TextScaler.linear(settings.textScale),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(false),
-                    child: Text('Not Now', style: TextStyle(color: isHighContrast ? Colors.white70 : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16 * settings.textScale)),
+                    child: Text('Not Now', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16 * settings.textScale)),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.of(ctx).pop(true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
-                      foregroundColor: isHighContrast ? Colors.black : Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                     child: Text('Enable', style: TextStyle(fontSize: 16 * settings.textScale, fontWeight: FontWeight.bold)),
                   ),
@@ -128,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
-      backgroundColor: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -162,7 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 'Welcome Back',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontFamily: settings.fontFamily,
                   height: settings.lineSpacing,
                 ),
@@ -173,7 +173,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Sign in to continue your personalized learning journey.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontFamily: settings.fontFamily,
                   height: settings.lineSpacing,
                 ),
@@ -183,10 +183,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               SizedBox(height: 32),
               Container(
                 decoration: BoxDecoration(
-                  color: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     width: isHighContrast ? 2 : 1,
                   ),
                 ),
@@ -198,7 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'Email Address',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontFamily: settings.fontFamily,
                       ),
                       textScaler: TextScaler.linear(settings.textScale),
@@ -210,7 +210,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: TextFormField(
                         controller: _emailController,
                         style: TextStyle(
-                          color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontFamily: settings.fontFamily,
                           fontSize: 16 * settings.textScale,
                         ),
@@ -219,17 +219,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outline,
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                           ),
-                          suffixIcon: Icon(Icons.email_outlined, color: isHighContrast ? Colors.white70 : null),
+                          suffixIcon: Icon(Icons.email_outlined),
                         ),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
@@ -240,7 +240,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'Password',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontFamily: settings.fontFamily,
                       ),
                       textScaler: TextScaler.linear(settings.textScale),
@@ -252,7 +252,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: TextFormField(
                         controller: _passwordController,
                         style: TextStyle(
-                          color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontFamily: settings.fontFamily,
                           fontSize: 16 * settings.textScale,
                         ),
@@ -261,17 +261,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outline,
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                           ),
-                          suffixIcon: Icon(Icons.lock_outline, color: isHighContrast ? Colors.white70 : null),
+                          suffixIcon: Icon(Icons.lock_outline),
                         ),
                         obscureText: true,
                         textInputAction: TextInputAction.done,
@@ -285,19 +285,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isHighContrast ? Colors.transparent : Theme.of(context).colorScheme.errorContainer,
+                            color: Theme.of(context).colorScheme.errorContainer,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isHighContrast ? Colors.redAccent : Colors.transparent),
+                            border: Border.all(color: Theme.of(context).colorScheme.error),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.warning_amber_rounded, color: isHighContrast ? Colors.redAccent : Theme.of(context).colorScheme.error),
+                              Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Error: ${authState.errorMessage}',
                                   style: TextStyle(
-                                    color: isHighContrast ? Colors.redAccent : Theme.of(context).colorScheme.error,
+                                    color: Theme.of(context).colorScheme.error,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: settings.fontFamily,
                                   ),
@@ -317,12 +317,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: authState.isLoading ? null : _handleSignIn,
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16 + settings.touchTargetMargin),
-                          backgroundColor: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
-                          foregroundColor: isHighContrast ? Colors.black : Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: authState.isLoading 
-                            ? SizedBox(height: 20 * settings.textScale, width: 20 * settings.textScale, child: CircularProgressIndicator(color: isHighContrast ? Colors.black : Colors.white, strokeWidth: 2))
+                            ? SizedBox(height: 20 * settings.textScale, width: 20 * settings.textScale, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary, strokeWidth: 2))
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -343,20 +343,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     SizedBox(height: 24),
                     Row(
                       children: [
-                        Expanded(child: Divider(color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant)),
+                        Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'OR', 
                             style: TextStyle(
-                              color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant, 
+                              color: Theme.of(context).colorScheme.onSurfaceVariant, 
                               fontWeight: FontWeight.bold,
                               fontFamily: settings.fontFamily,
                             ),
                             textScaler: TextScaler.linear(settings.textScale),
                           ),
                         ),
-                        Expanded(child: Divider(color: isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant)),
+                        Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
                       ],
                     ),
                     SizedBox(height: 24),
@@ -368,11 +368,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: OutlinedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16 + settings.touchTargetMargin),
                           side: BorderSide(
-                            color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                             width: isHighContrast ? 2 : 1,
                           ),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          foregroundColor: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                          foregroundColor: Theme.of(context).colorScheme.onSurface,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -401,11 +401,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: OutlinedButton.styleFrom(
                             padding: EdgeInsets.symmetric(vertical: 16 + settings.touchTargetMargin),
                             side: BorderSide(
-                              color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                              color: Theme.of(context).colorScheme.onSurface,
                               width: isHighContrast ? 2 : 1,
                             ),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            foregroundColor: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -432,7 +432,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           "Don't have an account? ",
                           style: TextStyle(
-                            color: isHighContrast ? Colors.white70 : Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontFamily: settings.fontFamily,
                           ),
                           textScaler: TextScaler.linear(settings.textScale),
@@ -446,7 +446,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               'Sign up',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 fontFamily: settings.fontFamily,
                               ),
                               textScaler: TextScaler.linear(settings.textScale),

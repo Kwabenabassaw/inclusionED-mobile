@@ -15,6 +15,7 @@ import 'components/course_modules_tab.dart';
 import 'components/course_tasks_tab.dart';
 import 'components/course_resources_tab.dart';
 import 'components/course_announcements_tab.dart';
+import 'package:opencampus_lms/features/quizzes/data/quiz_repository.dart';
 
 class CourseDetailsScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -94,15 +95,18 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
             onRefresh: () async {
               // Invalidate stream providers
               ref.invalidate(activeEnrollmentStreamProvider(widget.courseId));
-              // We could also invalidate child tab providers here if imported, but usually 
-              // Riverpod's auto-dispose handles those when they're unused, and 
-              // refreshing the main course/modules is the primary goal.
-
+              ref.invalidate(courseAnnouncementsProvider(widget.courseId));
+              ref.invalidate(courseContentsProvider(widget.courseId));
+              
               try {
-                await Future.wait([
+                final futures = <Future<dynamic>>[
                   ref.refresh(courseProvider(widget.courseId).future),
                   ref.refresh(courseModulesProvider(widget.courseId).future),
-                ]);
+                ];
+                if (currentModule != null) {
+                  futures.add(ref.refresh(moduleQuizzesProvider(currentModule.id).future));
+                }
+                await Future.wait(futures);
               } catch (_) {}
             },
             child: SingleChildScrollView(

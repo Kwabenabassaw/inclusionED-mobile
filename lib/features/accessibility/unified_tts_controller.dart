@@ -217,7 +217,10 @@ class UnifiedTtsController extends ChangeNotifier {
       // Try to load Polly speech marks
       if (marksUrl != null && marksUrl.isNotEmpty) {
         try {
-          final marksResponse = await _dio.get(marksUrl);
+          final marksResponse = await _dio.get(
+            marksUrl,
+            options: Options(responseType: ResponseType.plain),
+          );
           if (marksResponse.statusCode == 200) {
             final String content = marksResponse.data.toString();
             for (final line in content.split('\n')) {
@@ -238,7 +241,10 @@ class UnifiedTtsController extends ChangeNotifier {
       // Try to load alignment map
       if (alignmentUrl != null && alignmentUrl.isNotEmpty) {
         try {
-          final alignmentResponse = await _dio.get(alignmentUrl);
+          final alignmentResponse = await _dio.get(
+            alignmentUrl,
+            options: Options(responseType: ResponseType.plain),
+          );
           if (alignmentResponse.statusCode == 200) {
             final decoded = alignmentResponse.data;
             if (decoded is List) {

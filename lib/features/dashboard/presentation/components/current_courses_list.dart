@@ -34,7 +34,7 @@ class CurrentCoursesList extends ConsumerWidget {
         ),
         SizedBox(height: AppDimensions.stackSm),
         SizedBox(
-          height: 240, // Increased height to fit cover images nicely
+          height: 280, // Increased height to prevent overflow with larger fonts
           child: activeCoursesAsync.when(
             data: (courses) {
               if (courses.isEmpty) {
@@ -171,16 +171,17 @@ class CurrentCoursesList extends ConsumerWidget {
                           ),
                         ),
                         SizedBox(height: 4),
-                        Text(
-                          course.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
+                        Expanded(
+                          child: Text(
+                            course.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        const Spacer(),
                         Consumer(
                           builder: (context, ref, child) {
                             final countAsync = ref.watch(courseStudentCountProvider(course.id));

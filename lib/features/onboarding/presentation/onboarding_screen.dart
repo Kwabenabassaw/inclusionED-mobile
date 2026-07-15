@@ -40,7 +40,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final isHighContrast = settings.highContrast;
 
     return Scaffold(
-      backgroundColor: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -67,7 +67,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         child: Padding(
                           padding: EdgeInsets.all(8.0 + settings.touchTargetMargin),
                           child: Icon(Icons.arrow_back,
-                              color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                     )
@@ -90,7 +90,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         'OpenCampus LMS',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontSize: 16 * settings.textScale,
                           fontFamily: settings.fontFamily,
                         ),
@@ -103,7 +103,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       'Skip',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 14 * settings.textScale,
                         fontFamily: settings.fontFamily,
                       ),
@@ -160,7 +160,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   fontSize: 14 * settings.textScale,
                                 ),
                               ),
-                              backgroundColor: isHighContrast ? Colors.yellow : null,
                             ),
                           );
                         }
@@ -174,8 +173,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primaryContainer,
-                        foregroundColor: isHighContrast ? Colors.black : Theme.of(context).colorScheme.onPrimaryContainer,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -186,7 +185,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             // Footer Navigation
             Container(
               padding: const EdgeInsets.all(AppDimensions.marginPage),
-              color: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surfaceContainerLowest,
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -204,8 +203,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           height: 12,
                           decoration: BoxDecoration(
                             color: _currentPage == index
-                                ? (isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary)
-                                : (isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.primaryContainer),
+                                ? (Theme.of(context).colorScheme.primary)
+                                : (Theme.of(context).colorScheme.primaryContainer),
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
@@ -220,8 +219,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       onPressed: () => _nextPage(settings.reduceMotion),
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 16 + settings.touchTargetMargin),
-                        backgroundColor: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
-                        foregroundColor: isHighContrast ? Colors.black : Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
@@ -263,10 +262,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: isHighContrast ? Colors.yellow.withValues(alpha: 0.1) : Theme.of(context).colorScheme.primaryContainer,
+                color: Theme.of(context).colorScheme.primaryContainer,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isHighContrast ? Colors.yellow : Colors.transparent,
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),
@@ -283,7 +282,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
               fontFamily: settings.fontFamily,
               height: settings.lineSpacing,
             ),
@@ -294,7 +293,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             description,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: isHighContrast ? Colors.white70 : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontFamily: settings.fontFamily,
               height: settings.lineSpacing,
             ),

@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_ai/firebase_ai.dart';
 
 final aiChatServiceProvider = Provider<AiChatService>((ref) {
   return AiChatService();
@@ -14,15 +12,7 @@ class AiChatService {
   late final GenerativeModel _model;
 
   AiChatService() {
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      print('Warning: GEMINI_API_KEY not found in .env');
-    }
-    
-    _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: apiKey ?? '',
-    );
+    _model = FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash');
   }
 
   Future<String> _buildCourseContext(String courseId) async {
@@ -104,9 +94,8 @@ class AiChatService {
       }
 
       // We inject system instruction into a GenerativeModel specifically for this chat
-      final chatModel = GenerativeModel(
+      final chatModel = FirebaseAI.googleAI().generativeModel(
         model: 'gemini-2.5-flash',
-        apiKey: dotenv.env['GEMINI_API_KEY'] ?? '',
         systemInstruction: Content.system(systemInstruction),
       );
 

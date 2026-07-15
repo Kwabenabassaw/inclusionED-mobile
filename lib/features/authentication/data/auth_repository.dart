@@ -137,6 +137,7 @@ class AuthRepository {
 
   Future<void> signOut() async {
     try {
+      await _fcmService.deleteToken();
       if (!kIsWeb) {
         await _googleSignIn.signOut();
       }

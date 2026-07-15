@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
+import 'package:opencampus_lms/core/theme/app_theme.dart';
 import 'package:opencampus_lms/shared/models/quiz.dart';
 
 class QuizResultsScreen extends StatelessWidget {
@@ -42,6 +43,7 @@ class QuizResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AccessibilityThemeExtension>();
     final score = _calculateScore();
     final correctCount = _calculateCorrectCount();
     final percentage = quiz.totalPoints > 0 ? (score / quiz.totalPoints) * 100 : 0.0;
@@ -93,7 +95,7 @@ class QuizResultsScreen extends StatelessWidget {
                                 value: percentage / 100,
                                 strokeWidth: 10,
                                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                                color: isPassed ? Colors.green.shade600 : theme.colorScheme.primary,
+                                color: isPassed ? (ext?.quizCorrectColor ?? Colors.green.shade600) : theme.colorScheme.primary,
                                 strokeCap: StrokeCap.round,
                               ),
                             ),
@@ -166,14 +168,14 @@ class QuizResultsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
                       side: BorderSide(
                         color: isCorrect 
-                            ? Colors.green.shade200 
-                            : Colors.red.shade200,
+                            ? (ext?.quizCorrectColor ?? Colors.green).withValues(alpha: 0.5) 
+                            : (ext?.quizIncorrectColor ?? Colors.red).withValues(alpha: 0.5),
                         width: 1.5,
                       ),
                     ),
                     color: isCorrect 
-                        ? Colors.green.shade50.withValues(alpha: 0.3) 
-                        : Colors.red.shade50.withValues(alpha: 0.3),
+                        ? (ext?.quizCorrectColor ?? Colors.green).withValues(alpha: 0.1) 
+                        : (ext?.quizIncorrectColor ?? Colors.red).withValues(alpha: 0.1),
                     child: Padding(
                       padding: const EdgeInsets.all(AppDimensions.stackLg),
                       child: Column(
@@ -190,7 +192,7 @@ class QuizResultsScreen extends StatelessWidget {
                                   vertical: 4.0,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isCorrect ? Colors.green.shade100 : Colors.red.shade100,
+                                  color: isCorrect ? (ext?.quizCorrectColor ?? Colors.green).withValues(alpha: 0.2) : (ext?.quizIncorrectColor ?? Colors.red).withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
                                 ),
                                 child: Row(
@@ -198,14 +200,14 @@ class QuizResultsScreen extends StatelessWidget {
                                   children: [
                                     Icon(
                                       isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                                      color: isCorrect ? Colors.green.shade800 : Colors.red.shade800,
+                                      color: isCorrect ? (ext?.quizCorrectColor ?? Colors.green) : (ext?.quizIncorrectColor ?? Colors.red),
                                       size: 18,
                                     ),
                                     SizedBox(width: 6),
                                     Text(
                                       isCorrect ? 'CORRECT' : 'INCORRECT',
                                       style: theme.textTheme.labelLarge?.copyWith(
-                                        color: isCorrect ? Colors.green.shade900 : Colors.red.shade900,
+                                        color: isCorrect ? (ext?.quizCorrectColor ?? Colors.green) : (ext?.quizIncorrectColor ?? Colors.red),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.1,
                                       ),
@@ -258,17 +260,17 @@ class QuizResultsScreen extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: isCorrect 
-                                  ? Colors.green.shade100.withValues(alpha: 0.5) 
-                                  : Colors.red.shade100.withValues(alpha: 0.5),
+                                  ? (ext?.quizCorrectColor ?? Colors.green).withValues(alpha: 0.1) 
+                                  : (ext?.quizIncorrectColor ?? Colors.red).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(AppDimensions.radiusDefault),
                               border: Border.all(
-                                color: isCorrect ? Colors.green.shade300 : Colors.red.shade300,
+                                color: isCorrect ? (ext?.quizCorrectColor ?? Colors.green) : (ext?.quizIncorrectColor ?? Colors.red),
                               ),
                             ),
                             child: Text(
                               answer.isEmpty ? "(No Answer Provided)" : answer,
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: isCorrect ? Colors.green.shade900 : Colors.red.shade900,
+                                color: isCorrect ? (ext?.quizCorrectColor ?? Colors.green) : (ext?.quizIncorrectColor ?? Colors.red),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -292,16 +294,16 @@ class QuizResultsScreen extends StatelessWidget {
                                 vertical: AppDimensions.stackSm,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade100.withValues(alpha: 0.5),
+                                color: (ext?.quizCorrectColor ?? Colors.green).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(AppDimensions.radiusDefault),
                                 border: Border.all(
-                                  color: Colors.green.shade300,
+                                  color: ext?.quizCorrectColor ?? Colors.green,
                                 ),
                               ),
                               child: Text(
                                 q.correctAnswer,
                                 style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: Colors.green.shade900,
+                                  color: ext?.quizCorrectColor ?? Colors.green,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

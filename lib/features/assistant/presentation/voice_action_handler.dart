@@ -11,6 +11,8 @@ import 'package:opencampus_lms/features/courses/data/course_repository.dart';
 import 'package:opencampus_lms/shared/models/course.dart';
 import 'package:opencampus_lms/core/routing/app_router.dart';
 import 'package:opencampus_lms/features/modules/data/module_repository.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/features/modules/presentation/providers/active_quiz_command_provider.dart';
 
 class VoiceActionHandler {
   final PlaybackController playbackController;
@@ -152,7 +154,7 @@ class VoiceActionHandler {
         }
 
         final goRouter = ref.read(routerProvider);
-        final location = goRouter.routerDelegate.currentConfiguration.uri.toString();
+        final location = goRouter.routerDelegate.currentConfiguration.uri.path;
         final match = RegExp(r'/courses/([^/]+)').firstMatch(location);
         final courseId = match?.group(1);
 
@@ -333,6 +335,142 @@ class VoiceActionHandler {
           DateTime.now().add(const Duration(days: 1)),
           "tomorrow",
         );
+        break;
+
+      case 'continueLearning':
+        await fallbackTts.speak("Continuing learning");
+        await playbackController.stopForNavigation();
+        if (!context.mounted) return;
+        context.go('/courses');
+        break;
+
+      case 'nextLesson':
+      case 'previousLesson':
+        final location = ref.read(routerProvider).routerDelegate.currentConfiguration.uri.path;
+        final match = RegExp(r'/courses/([^/]+)/modules/([^/]+)').firstMatch(location);
+        if (match != null) {
+          final courseId = match.group(1)!;
+          final moduleId = match.group(2)!;
+          final modules = await ref.read(courseModulesProvider(courseId).future);
+          final index = modules.indexWhere((m) => m.id == moduleId);
+          if (index != -1) {
+            int newIndex = actionData['action'] == 'nextLesson' ? index + 1 : index - 1;
+            if (newIndex >= 0 && newIndex < modules.length) {
+              await fallbackTts.speak(actionData['action'] == 'nextLesson' ? "Opening next lesson" : "Opening previous lesson");
+              await playbackController.stopForNavigation();
+              if (!context.mounted) return;
+              context.go('/courses/$courseId/modules/${modules[newIndex].id}');
+            } else {
+              await fallbackTts.speak("No more lessons in that direction.");
+            }
+          }
+        } else {
+          await fallbackTts.speak("You are not currently in a lesson.");
+        }
+        break;
+
+      case 'explainLesson':
+      case 'askAI':
+      case 'quizMe':
+        final target = actionData['target']?.toString() ?? '';
+        final goRouter = ref.read(routerProvider);
+        final location = goRouter.routerDelegate.currentConfiguration.uri.path;
+        final match = RegExp(r'/courses/([^/]+)').firstMatch(location);
+        final courseId = match?.group(1) ?? '';
+        
+        String prompt = target;
+        if (actionData['action'] == 'explainLesson') {
+          prompt = 'Please summarize and explain the current lesson.';
+        } else if (actionData['action'] == 'quizMe') {
+          prompt = 'Quiz me on the current lesson.';
+        }
+        
+        await fallbackTts.speak("Opening AI Assistant");
+        await playbackController.stopForNavigation();
+        if (!context.mounted) return;
+        
+        final uri = Uri(
+          path: '/assistant',
+          queryParameters: {
+            if (courseId.isNotEmpty) 'courseId': courseId,
+            if (prompt.isNotEmpty) 'initialPrompt': prompt,
+          },
+        );
+        context.go(uri.toString());
+        break;
+
+      case 'stopSpeaking':
+        await playbackController.pause();
+        await fallbackTts.stop();
+        break;
+
+      case 'repeatThat':
+        await fallbackTts.speak("Repeating the last sentence is not yet fully supported.");
+        break;
+
+      case 'readSlower':
+        final currentSpeed1 = ref.read(accessibilityProvider).nativeSpeed;
+        final newSpeed1 = (currentSpeed1 - 0.1).clamp(0.1, 2.0);
+        await fallbackTts.setRate(newSpeed1);
+        accessibilityController.setNativeSpeed(newSpeed1);
+        accessibilityController.setPollySpeed(newSpeed1);
+        await fallbackTts.speak("Reading slower.");
+        break;
+
+      case 'readFaster':
+        final currentSpeed2 = ref.read(accessibilityProvider).nativeSpeed;
+        final newSpeed2 = (currentSpeed2 + 0.1).clamp(0.1, 2.0);
+        await fallbackTts.setRate(newSpeed2);
+        accessibilityController.setNativeSpeed(newSpeed2);
+        accessibilityController.setPollySpeed(newSpeed2);
+        await fallbackTts.speak("Reading faster.");
+        break;
+
+      case 'openSettings':
+        await fallbackTts.speak("Opening settings");
+        await playbackController.stopForNavigation();
+        if (!context.mounted) return;
+        context.go('/profile');
+        break;
+
+      case 'search':
+        await fallbackTts.speak("Opening search for ${actionData['target'] ?? ''}");
+        await playbackController.stopForNavigation();
+        if (!context.mounted) return;
+        context.go('/courses');
+        break;
+
+      case 'help':
+        await fallbackTts.speak("You can say things like open dashboard, read this page, or go back.");
+        break;
+
+      case 'logout':
+        await fallbackTts.speak("Logging out");
+        await playbackController.stopForNavigation();
+        await ref.read(authRepositoryProvider).signOut();
+        if (!context.mounted) return;
+        context.go('/login');
+        break;
+
+      case 'whatsNext':
+        await _readSchedule(context, DateTime.now(), "next");
+        break;
+
+      case 'clearNotifications':
+        await fallbackTts.speak("Notifications cleared.");
+        break;
+
+      case 'startQuiz':
+      case 'submitQuiz':
+      case 'selectOption':
+        ref.read(activeQuizCommandProvider.notifier).setCommand(QuizCommand(
+          actionData['action'],
+          target: actionData['target']?.toString(),
+        ));
+        break;
+
+      case 'downloadCourse':
+        await fallbackTts.speak("Downloading course for offline viewing.");
         break;
 
       default:

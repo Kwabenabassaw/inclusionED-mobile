@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,13 +10,10 @@ import 'package:opencampus_lms/core/theme/app_theme.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/firebase_options.dart';
 import 'package:responsive_scaler/responsive_scaler.dart';
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await dotenv.load(fileName: ".env");
 
   ResponsiveScaler.init(
     designWidth: 375,
@@ -26,6 +24,14 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    if (!kIsWeb) {
+      await FirebaseAppCheck.instance.activate(
+        // ignore: deprecated_member_use
+        androidProvider: AndroidProvider.debug,
+        // ignore: deprecated_member_use
+        appleProvider: AppleProvider.debug,
+      );
+    }
   } catch (e) {
     debugPrint('Firebase initialization warning: $e');
   }
@@ -55,11 +61,51 @@ void main() async {
   );
 }
 
-class InclusiveEdStudentApp extends ConsumerWidget {
+class InclusiveEdStudentApp extends ConsumerStatefulWidget {
   const InclusiveEdStudentApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InclusiveEdStudentApp> createState() => _InclusiveEdStudentAppState();
+}
+
+class _InclusiveEdStudentAppState extends ConsumerState<InclusiveEdStudentApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Setup notification routing callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final fcmService = ref.read(fcmServiceProvider);
+      fcmService.setOnNotificationTapped((type, referenceId) {
+        final router = ref.read(routerProvider);
+        if (referenceId != null && referenceId.isNotEmpty) {
+          switch (type.toUpperCase()) {
+            case 'GRADE':
+            case 'ANNOUNCEMENT':
+            case 'NEW_WEEK':
+            case 'ENROLLMENT':
+              router.go('/courses/$referenceId');
+              break;
+            case 'QUIZ':
+              // Assuming referenceId is courseId:quizId
+              final parts = referenceId.split(':');
+              if (parts.length == 2) {
+                router.go('/courses/${parts[0]}/quizzes/${parts[1]}');
+              } else {
+                router.go('/courses/$referenceId');
+              }
+              break;
+            default:
+              router.go('/notifications');
+          }
+        } else {
+          router.go('/notifications');
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final goRouter = ref.watch(routerProvider);
     final accessibilitySettings = ref.watch(accessibilityProvider);
 

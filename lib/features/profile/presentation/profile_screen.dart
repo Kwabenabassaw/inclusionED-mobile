@@ -461,6 +461,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             theme: theme,
             children: [
               _buildInteractiveTile(
+                leading: Icons.accessibility_new,
+                title: 'Accessibility Profile',
+                subtitle: _getPresetName(settings.preset),
+                theme: theme,
+                onTap: () => _showPresetSelectionBottomSheet(context, settings.preset, notifier),
+              ),
+              _buildInteractiveTile(
                 leading: Icons.format_size,
                 title: 'Font Size',
                 subtitle: '${(settings.textScale * 100).toInt()}%',
@@ -798,6 +805,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       ),
       builder: (context) {
         return _LineSpacingBottomSheet(initialSpacing: currentSpacing, notifier: notifier);
+      },
+    );
+  }
+
+  String _getPresetName(AccessibilityPreset preset) {
+    switch (preset) {
+      case AccessibilityPreset.standard:
+        return 'Standard (Default)';
+      case AccessibilityPreset.dyslexia:
+        return 'Dyslexia / Cognitive Focus';
+      case AccessibilityPreset.visualImpairment:
+        return 'Visual Impairment (Low Vision)';
+      case AccessibilityPreset.motorDifficulty:
+        return 'Motor Difficulty Focus';
+    }
+  }
+
+  void _showPresetSelectionBottomSheet(BuildContext context, AccessibilityPreset currentPreset, AccessibilityNotifier notifier) {
+    final theme = Theme.of(context);
+    final presets = [
+      AccessibilityPreset.standard,
+      AccessibilityPreset.dyslexia,
+      AccessibilityPreset.visualImpairment,
+      AccessibilityPreset.motorDifficulty,
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Accessibility Profile', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  ...presets.map((preset) {
+                    return RadioListTile<AccessibilityPreset>(
+                      title: Text(_getPresetName(preset)),
+                      value: preset,
+                      groupValue: currentPreset,
+                      onChanged: (value) {
+                        if (value != null) {
+                          notifier.applyPreset(value);
+                          Navigator.pop(context);
+                        }
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        );
       },
     );
   }

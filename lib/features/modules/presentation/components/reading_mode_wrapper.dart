@@ -24,13 +24,8 @@ class ReadingModeWrapper extends ConsumerWidget {
     }
 
     // Otherwise, show the Reading Mode with Highlighting
-    final textColor = accessSettings.highContrast
-        ? Colors.yellowAccent
-        : theme.colorScheme.onSurface;
-
-    final bgColor = accessSettings.highContrast
-        ? Colors.black
-        : theme.colorScheme.surface;
+    final textColor = theme.colorScheme.onSurface;
+    final bgColor = theme.colorScheme.surface;
 
     // Use currentTextToSpeak from playback if available, fallback to the textToRead provider
     final text = playback.currentTextToSpeak.isNotEmpty
@@ -38,6 +33,12 @@ class ReadingModeWrapper extends ConsumerWidget {
         : textToRead;
 
     Widget content;
+    
+    final baseStyle = theme.textTheme.bodyLarge?.copyWith(
+      fontSize: (theme.textTheme.bodyLarge?.fontSize ?? 16) * 1.2,
+      color: textColor,
+      letterSpacing: 0.5,
+    );
 
     if (playback.highlightEnd == 0 ||
         playback.highlightEnd > text.length ||
@@ -45,21 +46,7 @@ class ReadingModeWrapper extends ConsumerWidget {
       // If we don't have valid highlight bounds, just show the text without highlights
       content = Text(
         text,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontSize:
-              (theme.textTheme.bodyLarge?.fontSize ?? 16) *
-              accessSettings.textScale *
-              1.2,
-          color: textColor,
-          height: accessSettings.lineSpacing * 1.5,
-          letterSpacing: 0.5,
-          fontFamily: accessSettings.fontFamily == 'System'
-              ? null
-              : accessSettings.fontFamily,
-          fontWeight: accessSettings.boldText
-              ? FontWeight.bold
-              : FontWeight.normal,
-        ),
+        style: baseStyle,
       );
     } else {
       // Valid highlight bounds: slice the string and apply background color to the active word
@@ -69,22 +56,6 @@ class ReadingModeWrapper extends ConsumerWidget {
         playback.highlightEnd,
       );
       final afterText = text.substring(playback.highlightEnd);
-
-      final baseStyle = theme.textTheme.bodyLarge?.copyWith(
-        fontSize:
-            (theme.textTheme.bodyLarge?.fontSize ?? 16) *
-            accessSettings.textScale *
-            1.2,
-        color: textColor,
-        height: accessSettings.lineSpacing * 1.5,
-        letterSpacing: 0.5,
-        fontFamily: accessSettings.fontFamily == 'System'
-            ? null
-            : accessSettings.fontFamily,
-        fontWeight: accessSettings.boldText
-            ? FontWeight.bold
-            : FontWeight.normal,
-      );
 
       final highlightStyle = baseStyle?.copyWith(
         backgroundColor: Colors.yellowAccent.shade100,

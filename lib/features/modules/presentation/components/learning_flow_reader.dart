@@ -129,13 +129,7 @@ class _LearningFlowReaderState extends ConsumerState<LearningFlowReader> {
             .where((text) => text.isNotEmpty)
             .join('\n\n');
 
-        final bgColor = accessSettings.highContrast
-            ? Colors.black
-            : theme.colorScheme.surface;
-
-        final textColor = accessSettings.highContrast
-            ? Colors.yellowAccent
-            : theme.colorScheme.onSurface;
+        final bgColor = theme.colorScheme.surface;
 
         return VisibilityDetector(
           key: Key('reader_${widget.moduleId}'),
@@ -197,80 +191,18 @@ class _LearningFlowReaderState extends ConsumerState<LearningFlowReader> {
                       child: Markdown(
                         data: markdownText,
                         padding: const EdgeInsets.all(AppDimensions.marginPage),
-                        styleSheet: MarkdownStyleSheet(
-                          h1: theme.textTheme.displayLarge?.copyWith(
-                            fontSize:
-                                (theme.textTheme.displayLarge?.fontSize ?? 32) *
-                                accessSettings.textScale,
-                            color: textColor,
-                            height: accessSettings.lineSpacing,
-                            fontFamily: accessSettings.fontFamily == 'System'
-                                ? null
-                                : accessSettings.fontFamily,
-                            fontWeight: accessSettings.boldText
-                                ? FontWeight.w900
-                                : FontWeight.bold,
-                          ),
-                          h2: theme.textTheme.displayMedium?.copyWith(
-                            fontSize:
-                                (theme.textTheme.displayMedium?.fontSize ??
-                                    28) *
-                                accessSettings.textScale,
-                            color: textColor,
-                            height: accessSettings.lineSpacing,
-                            fontFamily: accessSettings.fontFamily == 'System'
-                                ? null
-                                : accessSettings.fontFamily,
-                            fontWeight: accessSettings.boldText
-                                ? FontWeight.w900
-                                : FontWeight.bold,
-                          ),
-                          p: theme.textTheme.bodyLarge?.copyWith(
-                            fontSize:
-                                (theme.textTheme.bodyLarge?.fontSize ?? 16) *
-                                accessSettings.textScale,
-                            color: textColor,
-                            height: accessSettings.lineSpacing * 1.5,
-                            letterSpacing: 0.3,
-                            fontFamily: accessSettings.fontFamily == 'System'
-                                ? null
-                                : accessSettings.fontFamily,
-                            fontWeight: accessSettings.boldText
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          listBullet: theme.textTheme.bodyLarge?.copyWith(
-                            fontSize:
-                                (theme.textTheme.bodyLarge?.fontSize ?? 16) *
-                                accessSettings.textScale,
-                            color: textColor,
-                            height: accessSettings.lineSpacing * 1.5,
-                            fontFamily: accessSettings.fontFamily == 'System'
-                                ? null
-                                : accessSettings.fontFamily,
-                            fontWeight: accessSettings.boldText
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
+                        styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                          p: theme.textTheme.bodyLarge,
+                          listBullet: theme.textTheme.bodyLarge,
                           blockquoteDecoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer.withAlpha(
-                              50,
+                            color: theme.colorScheme.primaryContainer.withValues(
+                              alpha: 0.2, // ~50 out of 255
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           blockquotePadding: const EdgeInsets.all(4),
                           blockquote: theme.textTheme.bodyLarge?.copyWith(
-                            fontSize:
-                                (theme.textTheme.bodyLarge?.fontSize ?? 16) *
-                                accessSettings.textScale,
                             color: theme.colorScheme.onPrimaryContainer,
-                            height: accessSettings.lineSpacing * 1.5,
-                            fontFamily: accessSettings.fontFamily == 'System'
-                                ? null
-                                : accessSettings.fontFamily,
-                            fontWeight: accessSettings.boldText
-                                ? FontWeight.bold
-                                : FontWeight.normal,
                           ),
                         ),
                       ),

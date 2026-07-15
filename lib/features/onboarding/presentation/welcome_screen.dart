@@ -13,7 +13,7 @@ class WelcomeScreen extends ConsumerWidget {
     final isHighContrast = settings.highContrast;
 
     return Scaffold(
-      backgroundColor: isHighContrast ? Colors.black : Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppDimensions.marginPage),
@@ -38,7 +38,7 @@ class WelcomeScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isHighContrast ? Colors.white : null,
+                  color: Theme.of(context).colorScheme.primary,
                   fontFamily: settings.fontFamily,
                   height: settings.lineSpacing,
                 ),
@@ -49,7 +49,7 @@ class WelcomeScreen extends ConsumerWidget {
                 'How would you like to experience the app today? You can always change this later in Settings.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontFamily: settings.fontFamily,
                   height: settings.lineSpacing,
                 ),
@@ -99,8 +99,8 @@ class WelcomeScreen extends ConsumerWidget {
                 onPressed: () => context.push('/onboarding'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16 + settings.touchTargetMargin),
-                  backgroundColor: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
-                  foregroundColor: isHighContrast ? Colors.black : Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -155,13 +155,13 @@ class _PresetCard extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border.all(
                 color: isSelected 
-                    ? (isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary)
-                    : (isHighContrast ? Colors.white54 : Theme.of(context).colorScheme.outlineVariant),
+                    ? (Theme.of(context).colorScheme.primary)
+                    : (Theme.of(context).colorScheme.outlineVariant),
                 width: isSelected ? 2 : 1,
               ),
               borderRadius: BorderRadius.circular(12),
               color: isSelected
-                  ? (isHighContrast ? Colors.yellow.withValues(alpha: 0.1) : Theme.of(context).colorScheme.primaryContainer)
+                  ? Theme.of(context).colorScheme.primaryContainer
                   : Colors.transparent,
             ),
             child: Row(
@@ -169,8 +169,8 @@ class _PresetCard extends StatelessWidget {
                 Icon(
                   icon,
                   color: isSelected
-                      ? (isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary)
-                      : (isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface),
+                      ? (Theme.of(context).colorScheme.primary)
+                      : (Theme.of(context).colorScheme.onSurface),
                   size: 24 * settings.textScale,
                 ),
                 SizedBox(width: 16 * settings.textScale),
@@ -180,7 +180,7 @@ class _PresetCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isHighContrast ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: settings.fontFamily,
                     ),
                     textScaler: TextScaler.linear(settings.textScale),
@@ -189,7 +189,7 @@ class _PresetCard extends StatelessWidget {
                 if (isSelected)
                   Icon(
                     Icons.check_circle,
-                    color: isHighContrast ? Colors.yellow : Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 24 * settings.textScale,
                   ),
               ],

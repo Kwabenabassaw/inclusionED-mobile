@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:opencampus_lms/core/theme/app_theme.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
@@ -12,6 +13,7 @@ import 'package:opencampus_lms/features/modules/presentation/quiz_results_screen
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/accessibility/presentation/display_settings_bottom_sheet.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:opencampus_lms/features/modules/presentation/providers/active_quiz_command_provider.dart';
 
 // ─── Riverpod State Management for Voice ──────────────────────────────────────
 
@@ -70,7 +72,9 @@ class QuizVoiceController extends Notifier<QuizVoiceState> {
       state = state.copyWith(isSpeechEnabled: enabled);
     } catch (e) {
       state = state.copyWith(
-          isSpeechEnabled: false, errorMessage: e.toString());
+        isSpeechEnabled: false,
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -79,7 +83,11 @@ class QuizVoiceController extends Notifier<QuizVoiceState> {
       state = state.copyWith(errorMessage: 'Speech to text is not enabled.');
       return;
     }
-    state = state.copyWith(isListening: true, lastWords: '', errorMessage: null);
+    state = state.copyWith(
+      isListening: true,
+      lastWords: '',
+      errorMessage: null,
+    );
     HapticFeedback.heavyImpact();
 
     try {
@@ -114,8 +122,8 @@ class QuizVoiceController extends Notifier<QuizVoiceState> {
 
 final quizVoiceControllerProvider =
     NotifierProvider<QuizVoiceController, QuizVoiceState>(() {
-  return QuizVoiceController();
-});
+      return QuizVoiceController();
+    });
 
 // ─── Quiz Screen ──────────────────────────────────────────────────────────────
 
@@ -157,9 +165,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   int _highlightEnd = 0;
   String _highlightChunk = '';
   int _speakingOptionIndex = -1;
-
-  double get _fontScaleMultiplier => ref.watch(accessibilityProvider).textScale;
-
   // Mic pulse animation
   late AnimationController _pulseAnimController;
   late Animation<double> _pulseAnim;
@@ -207,7 +212,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     await _flutterTts.setPitch(1.0);
 
     // progressHandler gives (text, start, end, word) relative to what was spoken.
-    _flutterTts.setProgressHandler((String text, int start, int end, String word) {
+    _flutterTts.setProgressHandler((
+      String text,
+      int start,
+      int end,
+      String word,
+    ) {
       if (mounted) {
         setState(() {
           _highlightStart = start;
@@ -231,14 +241,18 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         // After question, speak options.
         final q = widget.quiz.questions[_currentQuestionIndex];
         final type = q.type.toUpperCase().replaceAll('-', '_');
-        if (type == 'MULTIPLE_CHOICE' && q.options != null && q.options!.isNotEmpty) {
+        if (type == 'MULTIPLE_CHOICE' &&
+            q.options != null &&
+            q.options!.isNotEmpty) {
           setState(() {
             _highlightChunk = 'option_0';
             _speakingOptionIndex = 0;
             _highlightStart = 0;
             _highlightEnd = 0;
           });
-          await _flutterTts.speak('Your options are. Option A: ${q.options![0]}');
+          await _flutterTts.speak(
+            'Your options are. Option A: ${q.options![0]}',
+          );
         } else if (type == 'TRUE_FALSE') {
           setState(() {
             _highlightChunk = 'option_0';
@@ -253,7 +267,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       } else if (_highlightChunk.startsWith('option_')) {
         final q = widget.quiz.questions[_currentQuestionIndex];
         final type = q.type.toUpperCase().replaceAll('-', '_');
-        
+
         if (type == 'TRUE_FALSE') {
           if (_speakingOptionIndex == 0) {
             setState(() {
@@ -320,7 +334,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     if (voiceText.isEmpty) return;
 
     // Remove common trailing punctuation added by speech-to-text
-    final lower = voiceText.toLowerCase().trim().replaceAll(RegExp(r'[\.,\?!]+$'), '');
+    final lower = voiceText.toLowerCase().trim().replaceAll(
+      RegExp(r'[\.,\?!]+$'),
+      '',
+    );
 
     // 1. Check for navigation commands
     if (_isNextCommand(lower)) {
@@ -341,7 +358,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       return;
     }
     if (_isPlayCommand(lower)) {
-      _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex], forcePlay: true);
+      _playQuestionAudio(
+        widget.quiz.questions[_currentQuestionIndex],
+        forcePlay: true,
+      );
       return;
     }
 
@@ -433,9 +453,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
   String? _matchMultipleChoice(String lower, List<String> options) {
     if (options.isEmpty) return null;
-    
+
     // Single letter match
-    final maxLetter = String.fromCharCode('a'.codeUnitAt(0) + options.length - 1);
+    final maxLetter = String.fromCharCode(
+      'a'.codeUnitAt(0) + options.length - 1,
+    );
     final singleLetter = RegExp('^[a-$maxLetter]\$');
     if (singleLetter.hasMatch(lower)) {
       final idx = lower.codeUnitAt(0) - 'a'.codeUnitAt(0);
@@ -457,10 +479,18 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     // Ordinal match
     final ordinalMap = {
-      'first': 0, 'one': 0, '1': 0,
-      'second': 1, 'two': 1, '2': 1,
-      'third': 2, 'three': 2, '3': 2,
-      'fourth': 3, 'four': 3, '4': 3,
+      'first': 0,
+      'one': 0,
+      '1': 0,
+      'second': 1,
+      'two': 1,
+      '2': 1,
+      'third': 2,
+      'three': 2,
+      '3': 2,
+      'fourth': 3,
+      'four': 3,
+      '4': 3,
     };
     for (final entry in ordinalMap.entries) {
       if (lower.contains(entry.key) && entry.value < options.length) {
@@ -490,10 +520,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     // Partial substring match
     for (final option in options) {
-      if (lower.contains(option.toLowerCase().substring(
-            0,
-            (option.length * 0.4).ceil().clamp(3, option.length),
-          ))) {
+      if (lower.contains(
+        option.toLowerCase().substring(
+          0,
+          (option.length * 0.4).ceil().clamp(3, option.length),
+        ),
+      )) {
         return option;
       }
     }
@@ -512,8 +544,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
   // ─── Play button ────────────────────────────────────────────────────────────
 
-  Future<void> _playQuestionAudio(QuizQuestion question,
-      {bool forcePlay = false}) async {
+  Future<void> _playQuestionAudio(
+    QuizQuestion question, {
+    bool forcePlay = false,
+  }) async {
     if (_isSpeaking && !forcePlay) {
       // Stop playback
       await _flutterTts.stop();
@@ -582,8 +616,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     ref.read(quizVoiceControllerProvider.notifier).stopListening();
 
     try {
-      final enrollmentStream =
-          ref.read(activeEnrollmentStreamProvider(widget.courseId).future);
+      final enrollmentStream = ref.read(
+        activeEnrollmentStreamProvider(widget.courseId).future,
+      );
       final enrollment = await enrollmentStream;
 
       if (enrollment != null) {
@@ -591,7 +626,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         final updatedQuizIds = Set<String>.from(progress.completedQuizIds);
         updatedQuizIds.add(widget.quiz.id);
 
-        await ref.read(courseRepositoryProvider).updateEnrollmentProgress(
+        await ref
+            .read(courseRepositoryProvider)
+            .updateEnrollmentProgress(
               enrollment.id,
               progress.copyWith(completedQuizIds: updatedQuizIds.toList()),
             );
@@ -627,7 +664,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       if (autoSubmit) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Time is up! Quiz submitted automatically.')),
+            content: Text('Time is up! Quiz submitted automatically.'),
+          ),
         );
       }
 
@@ -638,9 +676,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       );
 
       if (widget.embedded) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => resultsScreen),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => resultsScreen));
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => resultsScreen),
@@ -648,9 +686,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error submitting quiz: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error submitting quiz: $e')));
       setState(() => _isSubmitting = false);
     }
   }
@@ -685,11 +723,27 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     // Watch voice state to display errors via SnackBar if any
     ref.listen<QuizVoiceState>(quizVoiceControllerProvider, (prev, next) {
-      if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Speech Error: ${next.errorMessage}')),
         );
         ref.read(quizVoiceControllerProvider.notifier).clearError();
+      }
+    });
+
+    ref.listen<QuizCommand?>(activeQuizCommandProvider, (prev, next) {
+      if (next != null && next != prev) {
+        if (next.action == 'startQuiz') {
+          // Logic for startQuiz (maybe play audio)
+          _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]);
+        } else if (next.action == 'submitQuiz') {
+          _submitQuiz();
+        } else if (next.action == 'selectOption') {
+          if (next.target != null) {
+            _handleVoiceInput('option ${next.target}');
+          }
+        }
       }
     });
 
@@ -707,7 +761,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 if (widget.quiz.timeLimit > 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.stackMd),
+                      horizontal: AppDimensions.stackMd,
+                    ),
                     child: Center(
                       child: Semantics(
                         label: 'Time remaining: $_formattedTime',
@@ -715,8 +770,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                           _formattedTime,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color:
-                                _timeRemainingSeconds < 60 ? Colors.red : null,
+                            color: _timeRemainingSeconds < 60
+                                ? Theme.of(context).colorScheme.error
+                                : null,
                           ),
                         ),
                       ),
@@ -727,10 +783,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       body: Column(
         children: [
           Semantics(
-            label: 'Quiz progress: ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}',
+            label:
+                'Quiz progress: ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}',
             child: ExcludeSemantics(
               child: LinearProgressIndicator(
-                value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
+                value:
+                    (_currentQuestionIndex + 1) / widget.quiz.questions.length,
               ),
             ),
           ),
@@ -738,15 +796,23 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           Consumer(
             builder: (context, ref, child) {
               final voiceState = ref.watch(quizVoiceControllerProvider);
-              if (!voiceState.isListening && voiceState.lastWords.isEmpty) return SizedBox.shrink();
-              
+              if (!voiceState.isListening && voiceState.lastWords.isEmpty)
+                return SizedBox.shrink();
+
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.5),
                 child: Text(
-                  voiceState.isListening 
-                      ? (voiceState.lastWords.isEmpty ? 'Listening...' : voiceState.lastWords)
+                  voiceState.isListening
+                      ? (voiceState.lastWords.isEmpty
+                            ? 'Listening...'
+                            : voiceState.lastWords)
                       : 'Heard: "${voiceState.lastWords}"',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -763,12 +829,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
                 setState(() => _currentQuestionIndex = index);
-                _playQuestionAudio(widget.quiz.questions[index], forcePlay: true);
+                _playQuestionAudio(
+                  widget.quiz.questions[index],
+                  forcePlay: true,
+                );
               },
               itemCount: widget.quiz.questions.length,
               itemBuilder: (context, index) {
-                return _buildQuestionPage(
-                    widget.quiz.questions[index], index);
+                return _buildQuestionPage(widget.quiz.questions[index], index);
               },
             ),
           ),
@@ -799,11 +867,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               label: _isSpeaking ? 'Stop audio' : 'Play audio',
               child: IconButton(
                 iconSize: 32,
-                onPressed: () => _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]),
+                onPressed: () => _playQuestionAudio(
+                  widget.quiz.questions[_currentQuestionIndex],
+                ),
                 icon: Icon(
-                  _isSpeaking
-                      ? Icons.stop_circle
-                      : Icons.play_circle_fill,
+                  _isSpeaking ? Icons.stop_circle : Icons.play_circle_fill,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 tooltip: _isSpeaking ? 'Stop' : 'Play',
@@ -822,14 +890,14 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       builder: (context, ref, child) {
         final voiceState = ref.watch(quizVoiceControllerProvider);
         final isListening = voiceState.isListening;
-        
+
         if (isListening) {
           _pulseAnimController.repeat(reverse: true);
         } else {
           _pulseAnimController.stop();
           _pulseAnimController.reset();
         }
-        
+
         return AnimatedBuilder(
           animation: _pulseAnim,
           builder: (context, child) {
@@ -849,23 +917,27 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                         _finishSpeaking();
                       }
                       if (isListening) {
-                        ref.read(quizVoiceControllerProvider.notifier).stopListening();
+                        ref
+                            .read(quizVoiceControllerProvider.notifier)
+                            .stopListening();
                       } else {
-                        ref.read(quizVoiceControllerProvider.notifier).startListening(
-                          onResult: _handleVoiceInput,
-                        );
+                        ref
+                            .read(quizVoiceControllerProvider.notifier)
+                            .startListening(onResult: _handleVoiceInput);
                       }
                     },
-                    backgroundColor: isListening 
-                        ? Colors.red 
+                    backgroundColor: isListening
+                        ? Theme.of(context).colorScheme.error
                         : Theme.of(context).colorScheme.primary,
                     elevation: isListening ? 8 : 4,
-                    tooltip: isListening ? 'Stop Voice Input' : 'Start Voice Input',
+                    tooltip: isListening
+                        ? 'Stop Voice Input'
+                        : 'Start Voice Input',
                     shape: const CircleBorder(),
                     child: Icon(
                       isListening ? Icons.mic : Icons.mic_none,
                       size: 40,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onError,
                     ),
                   ),
                 ),
@@ -896,15 +968,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               Text(
                 'Question ${index + 1} of ${widget.quiz.questions.length}',
                 style: Theme.of(context).textTheme.labelLarge,
-                textScaler: TextScaler.linear(_fontScaleMultiplier),
               ),
               Text(
                 'Points: ${question.points}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                textScaler: TextScaler.linear(_fontScaleMultiplier),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -921,9 +991,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             SizedBox(height: AppDimensions.stackSm),
             Text(
               '[Image Description: ${question.altText}]',
-              style:
-                  const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-              textScaler: TextScaler.linear(_fontScaleMultiplier),
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Colors.grey,
+              ),
             ),
           ],
           SizedBox(height: AppDimensions.stackXl),
@@ -953,7 +1024,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               letter: letter,
               text: optionText,
               isSelected: isSelected,
-              fontScaleMultiplier: _fontScaleMultiplier,
               onTap: () => setState(() => _selectedAnswers[index] = optionText),
               // For options: highlight when _highlightChunk == 'option_N'.
               // Positions are relative to 'Option X: [optionText]' spoken string.
@@ -964,7 +1034,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               highlightStart: _highlightStart,
               highlightEnd: _highlightEnd,
               currentChunk: _highlightChunk,
-              isReadingRulerActive: ref.watch(accessibilityProvider).readingRuler && _isSpeaking,
+              isReadingRulerActive:
+                  ref.watch(accessibilityProvider).readingRuler && _isSpeaking,
             ),
           );
         }),
@@ -984,17 +1055,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           controller: TextEditingController(text: answer)
             ..selection = TextSelection.collapsed(offset: answer.length),
           onChanged: (val) => _selectedAnswers[index] = val,
-          style: TextStyle(fontSize: 16 * _fontScaleMultiplier),
+          style: TextStyle(fontSize: 16),
           decoration: InputDecoration(
             border: const OutlineInputBorder(borderSide: BorderSide(width: 2)),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary, width: 3),
+                color: Theme.of(context).colorScheme.primary,
+                width: 3,
+              ),
             ),
             hintText: 'Type your answer here...',
             filled: true,
             fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            contentPadding: EdgeInsets.all(16 * _fontScaleMultiplier),
+            contentPadding: EdgeInsets.all(16),
           ),
           maxLines: question.type == 'short-answer' ? 3 : 1,
         ),
@@ -1003,11 +1076,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 
   Widget _buildTrueFalseButton(
-      int questionIndex, String currentAnswer, String value, int optIndex, bool isActive) {
+    int questionIndex,
+    String currentAnswer,
+    String value,
+    int optIndex,
+    bool isActive,
+  ) {
     final isSelected = currentAnswer == value;
-    final bool isReadingRulerActive = ref.watch(accessibilityProvider).readingRuler && _isSpeaking;
+    final bool isReadingRulerActive =
+        ref.watch(accessibilityProvider).readingRuler && _isSpeaking;
     final String highlightChunkName = isActive ? 'option_$optIndex' : '';
-    final bool isThisChunkActive = isActive && _highlightChunk.isNotEmpty && _highlightChunk == highlightChunkName;
+    final bool isThisChunkActive =
+        isActive &&
+        _highlightChunk.isNotEmpty &&
+        _highlightChunk == highlightChunkName;
 
     return Semantics(
       button: true,
@@ -1015,45 +1097,51 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       label: 'Answer choice: $value',
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-        backgroundColor: isSelected
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.surface,
-        side: BorderSide(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline,
-          width: isSelected ? 3.0 : 1.0,
-        ),
-        alignment: Alignment.centerLeft,
-        padding: EdgeInsets.all(AppDimensions.stackMd * _fontScaleMultiplier),
-        minimumSize: const Size.fromHeight(60),
-      ),
-      onPressed: () => setState(() => _selectedAnswers[questionIndex] = value),
-      child: Row(
-        children: [
-          Icon(
-            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+          backgroundColor: isSelected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surface,
+          side: BorderSide(
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-            size: 24 * _fontScaleMultiplier,
+                : Theme.of(context).colorScheme.outline,
+            width: isSelected ? 3.0 : 1.0,
           ),
-          SizedBox(width: 12 * _fontScaleMultiplier),
-          Text(
-            value,
-            style: TextStyle(
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.all(AppDimensions.stackMd),
+          minimumSize: const Size.fromHeight(60),
+        ),
+        onPressed: () =>
+            setState(() => _selectedAnswers[questionIndex] = value),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               color: isSelected
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : (isReadingRulerActive && !isThisChunkActive)
-                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)
-                      : Theme.of(context).colorScheme.onSurface,
-              fontSize: 16 * _fontScaleMultiplier,
-              fontWeight: FontWeight.w500,
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 24,
             ),
-          ),
-        ],
+            SizedBox(width: 12),
+            Text(
+              value,
+              style: TextStyle(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : (isReadingRulerActive && !isThisChunkActive)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.3)
+                    : Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   /// Builds text with a yellow highlight on the current word being spoken.
@@ -1064,38 +1152,40 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   /// FlutterTts.setProgressHandler — they are relative to the text that was spoken,
   /// which for the question chunk IS question.text itself.
   Widget _buildHighlightedText(
-      String text,
-      TextStyle baseStyle, {
-      required String chunkName,
-      required bool isActive,
+    String text,
+    TextStyle baseStyle, {
+    required String chunkName,
+    required bool isActive,
   }) {
     final settings = ref.watch(accessibilityProvider);
     final bool isRulerEnabled = settings.readingRuler && _isSpeaking;
     final bool isThisChunkActive = isActive && _highlightChunk == chunkName;
-    
+
     final TextStyle effectiveStyle = (isRulerEnabled && !isThisChunkActive)
-        ? baseStyle.copyWith(color: baseStyle.color?.withValues(alpha: 0.3) ?? Colors.grey.withValues(alpha: 0.3))
+        ? baseStyle.copyWith(
+            color:
+                baseStyle.color?.withValues(alpha: 0.3) ??
+                Colors.grey.withValues(alpha: 0.3),
+          )
         : baseStyle;
 
-    final bool shouldHighlight = isThisChunkActive &&
+    final bool shouldHighlight =
+        isThisChunkActive &&
         _highlightEnd > _highlightStart &&
         _highlightStart < text.length;
 
     if (!shouldHighlight) {
-      return Text(text,
-          style: effectiveStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+      return Text(text, style: effectiveStyle);
     }
 
     final int start = _highlightStart.clamp(0, text.length);
     final int end = _highlightEnd.clamp(0, text.length);
 
     if (start >= end) {
-      return Text(text,
-          style: effectiveStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+      return Text(text, style: effectiveStyle);
     }
 
     return RichText(
-      textScaler: TextScaler.linear(_fontScaleMultiplier),
       text: TextSpan(
         style: effectiveStyle,
         children: [
@@ -1103,8 +1193,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           TextSpan(
             text: text.substring(start, end),
             style: effectiveStyle.copyWith(
-              color: Colors.black,
-              backgroundColor: const Color(0xFFFDE047),
+              color: Theme.of(context).colorScheme.onSurface,
+              backgroundColor:
+                  Theme.of(
+                    context,
+                  ).extension<AccessibilityThemeExtension>()?.focusRingColor ??
+                  const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1131,15 +1225,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             child: Text('Previous'),
           ),
           ElevatedButton(
-            onPressed:
-                hasAnsweredCurrent && !_isSubmitting ? _nextQuestion : null,
+            onPressed: hasAnsweredCurrent && !_isSubmitting
+                ? _nextQuestion
+                : null,
             child: _isSubmitting
                 ? Semantics(
                     label: 'Submitting quiz',
                     child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   )
                 : Text(isLastQuestion ? 'Submit Quiz' : 'Next'),
           ),
@@ -1155,7 +1251,6 @@ class _OptionButton extends StatefulWidget {
   final String letter;
   final String text;
   final bool isSelected;
-  final double fontScaleMultiplier;
   final VoidCallback onTap;
   // Chunk-based highlight props
   final String highlightChunkName;
@@ -1169,7 +1264,6 @@ class _OptionButton extends StatefulWidget {
     required this.letter,
     required this.text,
     required this.isSelected,
-    required this.fontScaleMultiplier,
     required this.onTap,
     this.highlightChunkName = '',
     this.currentChunk = '',
@@ -1222,7 +1316,8 @@ class _OptionButtonState extends State<_OptionButton>
         if (flashValue > 0 && widget.isSelected) {
           bgColor = Color.lerp(
             theme.colorScheme.primaryContainer,
-            Colors.green.shade200,
+            theme.extension<AccessibilityThemeExtension>()?.quizCorrectColor ??
+                Colors.green,
             flashValue,
           )!;
         } else {
@@ -1237,101 +1332,104 @@ class _OptionButtonState extends State<_OptionButton>
           label: 'Answer choice: ${widget.text}',
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-            backgroundColor: bgColor,
-            side: BorderSide(
-              color: widget.isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
-              width: widget.isSelected ? 3.0 : 1.0,
+              backgroundColor: bgColor,
+              side: BorderSide(
+                color: widget.isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+                width: widget.isSelected ? 3.0 : 1.0,
+              ),
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.all(AppDimensions.stackMd),
+              minimumSize: const Size.fromHeight(60),
             ),
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.all(
-                AppDimensions.stackMd * widget.fontScaleMultiplier),
-            minimumSize: const Size.fromHeight(60),
-          ),
-          onPressed: widget.onTap,
-          child: Row(
-            children: [
-              Container(
-                width: 32 * widget.fontScaleMultiplier,
-                height: 32 * widget.fontScaleMultiplier,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.surfaceContainerHighest,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  widget.letter,
-                  style: TextStyle(
+            onPressed: widget.onTap,
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
                     color: widget.isSelected
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14 * widget.fontScaleMultiplier,
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.letter,
+                    style: TextStyle(
+                      color: widget.isSelected
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 12 * widget.fontScaleMultiplier),
-              Expanded(
-                child: _buildOptionHighlightedText(
-                  widget.text,
-                  TextStyle(
-                    color: widget.isSelected
-                        ? theme.colorScheme.onPrimaryContainer
-                        : theme.colorScheme.onSurface,
-                    fontWeight: widget.isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                SizedBox(width: 12),
+                Expanded(
+                  child: _buildOptionHighlightedText(
+                    widget.text,
+                    TextStyle(
+                      color: widget.isSelected
+                          ? theme.colorScheme.onPrimaryContainer
+                          : theme.colorScheme.onSurface,
+                      fontWeight: widget.isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
-              ),
-              if (widget.isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: theme.colorScheme.primary,
-                  size: 20 * widget.fontScaleMultiplier,
-                ),
-            ],
+                if (widget.isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+              ],
+            ),
           ),
-        ));
+        );
       },
     );
   }
 
   Widget _buildOptionHighlightedText(String text, TextStyle baseStyle) {
     // Only highlight when this option's chunk is the currently active chunk.
-    final bool isActive = widget.highlightChunkName.isNotEmpty &&
+    final bool isActive =
+        widget.highlightChunkName.isNotEmpty &&
         widget.currentChunk == widget.highlightChunkName;
-    final bool shouldHighlight = isActive && widget.highlightEnd > widget.highlightStart;
-        
+    final bool shouldHighlight =
+        isActive && widget.highlightEnd > widget.highlightStart;
+
     final TextStyle effectiveStyle = (widget.isReadingRulerActive && !isActive)
-        ? baseStyle.copyWith(color: baseStyle.color?.withValues(alpha: 0.3) ?? Colors.grey.withValues(alpha: 0.3))
+        ? baseStyle.copyWith(
+            color:
+                baseStyle.color?.withValues(alpha: 0.3) ??
+                Colors.grey.withValues(alpha: 0.3),
+          )
         : baseStyle;
 
     if (!shouldHighlight) {
-      return Text(text,
-          style: effectiveStyle,
-          textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+      return Text(text, style: effectiveStyle);
     }
 
     // The FlutterTts progress positions are relative to the full spoken string
     // e.g. 'Option A: integer age;' — so we subtract the prefix length to get
     // positions within the visible option text.
-    final int start =
-        (widget.highlightStart - widget.optionTextPrefixLen).clamp(0, text.length);
-    final int end =
-        (widget.highlightEnd - widget.optionTextPrefixLen).clamp(0, text.length);
+    final int start = (widget.highlightStart - widget.optionTextPrefixLen)
+        .clamp(0, text.length);
+    final int end = (widget.highlightEnd - widget.optionTextPrefixLen).clamp(
+      0,
+      text.length,
+    );
 
     if (start >= end) {
-      return Text(text,
-          style: effectiveStyle,
-          textScaler: TextScaler.linear(widget.fontScaleMultiplier));
+      return Text(text, style: effectiveStyle);
     }
 
     return RichText(
-      textScaler: TextScaler.linear(widget.fontScaleMultiplier),
       text: TextSpan(
         style: effectiveStyle,
         children: [
@@ -1339,8 +1437,12 @@ class _OptionButtonState extends State<_OptionButton>
           TextSpan(
             text: text.substring(start, end),
             style: effectiveStyle.copyWith(
-              color: Colors.black,
-              backgroundColor: const Color(0xFFFDE047),
+              color: Theme.of(context).colorScheme.onSurface,
+              backgroundColor:
+                  Theme.of(
+                    context,
+                  ).extension<AccessibilityThemeExtension>()?.focusRingColor ??
+                  const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1350,4 +1452,3 @@ class _OptionButtonState extends State<_OptionButton>
     );
   }
 }
-
