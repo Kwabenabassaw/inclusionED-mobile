@@ -76,6 +76,7 @@ dependencies:
   app_settings: ^7.0.0
   responsive_scaler: ^1.0.2
   google_generative_ai: ^0.4.7
+  flutter_dotenv: ^6.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -107,6 +108,7 @@ flutter:
   assets:
     - assets/images/welcome_illustration.png
     - assets/images/app_icon.png
+    - .env
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package

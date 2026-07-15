@@ -10,9 +10,13 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 import 'package:opencampus_lms/firebase_options.dart';
 import 'package:responsive_scaler/responsive_scaler.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  await dotenv.load(fileName: ".env");
+
   ResponsiveScaler.init(
     designWidth: 375,
     designHeight: 812,

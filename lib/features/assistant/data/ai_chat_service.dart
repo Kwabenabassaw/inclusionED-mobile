@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final aiChatServiceProvider = Provider<AiChatService>((ref) {
   return AiChatService();
@@ -10,16 +11,17 @@ final aiChatServiceProvider = Provider<AiChatService>((ref) {
 class AiChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  // Hardcoded for now per user request. 
-  // In production, this should be moved to flutter_dotenv or Firebase Remote Config.
-  // API key removed - use dotenv.env["GEMINI_API_KEY"]
-  
   late final GenerativeModel _model;
 
   AiChatService() {
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('Warning: GEMINI_API_KEY not found in .env');
+    }
+    
     _model = GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: _apiKey,
+      apiKey: apiKey ?? '',
     );
   }
 
@@ -66,27 +68,20 @@ class AiChatService {
       final normalizedCourseId = courseId ?? 'general';
       
       // 1. Fetch Chat Session History from Firestore
-      final sessionsQuery = await _firestore.collection('chat_sessions')
-          .where('studentId', isEqualTo: studentId)
-          .where('courseId', isEqualTo: normalizedCourseId)
-          .limit(1)
-          .get();
-
-      String sessionId;
-      if (sessionsQuery.docs.isEmpty) {
-        final newSessionRef = await _firestore.collection('chat_sessions').add({
+      final sessionId = '${studentId}_$normalizedCourseId';
+      final sessionRef = _firestore.collection('chat_sessions').doc(sessionId);
+      
+      final sessionDoc = await sessionRef.get();
+      if (!sessionDoc.exists) {
+        await sessionRef.set({
           'studentId': studentId,
           'courseId': normalizedCourseId,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
-        sessionId = newSessionRef.id;
-      } else {
-        sessionId = sessionsQuery.docs.first.id;
       }
 
-      final messagesQuery = await _firestore.collection('chat_sessions')
-          .doc(sessionId)
+      final messagesQuery = await sessionRef
           .collection('messages')
           .orderBy('createdAt', descending: false)
           .limitToLast(20)
@@ -111,7 +106,7 @@ class AiChatService {
       // We inject system instruction into a GenerativeModel specifically for this chat
       final chatModel = GenerativeModel(
         model: 'gemini-2.5-flash',
-        apiKey: _apiKey,
+        apiKey: dotenv.env['GEMINI_API_KEY'] ?? '',
         systemInstruction: Content.system(systemInstruction),
       );
 
