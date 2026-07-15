@@ -15,6 +15,7 @@ class AccessibilitySettings {
   final double readingSpeed;
   final String preferredVoice;
   final bool ttsHighlighting;
+  final bool readingRuler;
   final double touchTargetMargin;
   final bool defaultToStt;
   final bool voiceCommandPersistent;
@@ -41,6 +42,7 @@ class AccessibilitySettings {
     this.readingSpeed = 1.0,
     this.preferredVoice = 'default',
     this.ttsHighlighting = false,
+    this.readingRuler = false,
     this.touchTargetMargin = 0.0,
     this.defaultToStt = false,
     this.voiceCommandPersistent = false,
@@ -68,6 +70,7 @@ class AccessibilitySettings {
     double? readingSpeed,
     String? preferredVoice,
     bool? ttsHighlighting,
+    bool? readingRuler,
     double? touchTargetMargin,
     bool? defaultToStt,
     bool? voiceCommandPersistent,
@@ -94,6 +97,7 @@ class AccessibilitySettings {
       readingSpeed: readingSpeed ?? this.readingSpeed,
       preferredVoice: preferredVoice ?? this.preferredVoice,
       ttsHighlighting: ttsHighlighting ?? this.ttsHighlighting,
+      readingRuler: readingRuler ?? this.readingRuler,
       touchTargetMargin: touchTargetMargin ?? this.touchTargetMargin,
       defaultToStt: defaultToStt ?? this.defaultToStt,
       voiceCommandPersistent: voiceCommandPersistent ?? this.voiceCommandPersistent,
@@ -130,6 +134,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
       readingSpeed: prefs.getDouble('readingSpeed') ?? 1.0,
       preferredVoice: prefs.getString('preferredVoice') ?? 'default',
       ttsHighlighting: prefs.getBool('ttsHighlighting') ?? false,
+      readingRuler: prefs.getBool('readingRuler') ?? false,
       touchTargetMargin: prefs.getDouble('touchTargetMargin') ?? 0.0,
       defaultToStt: prefs.getBool('defaultToStt') ?? false,
       voiceCommandPersistent: prefs.getBool('voiceCommandPersistent') ?? false,
@@ -160,6 +165,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
     await prefs.setDouble('readingSpeed', newSettings.readingSpeed);
     await prefs.setString('preferredVoice', newSettings.preferredVoice);
     await prefs.setBool('ttsHighlighting', newSettings.ttsHighlighting);
+    await prefs.setBool('readingRuler', newSettings.readingRuler);
     await prefs.setDouble('touchTargetMargin', newSettings.touchTargetMargin);
     await prefs.setBool('defaultToStt', newSettings.defaultToStt);
     await prefs.setBool('voiceCommandPersistent', newSettings.voiceCommandPersistent);
@@ -221,6 +227,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
   void toggleBoldText() => updateSettings(state.copyWith(boldText: !state.boldText));
   void toggleHighContrast() => updateSettings(state.copyWith(highContrast: !state.highContrast));
   void toggleDarkMode() => updateSettings(state.copyWith(darkMode: !state.darkMode));
+  void toggleReadingRuler() => updateSettings(state.copyWith(readingRuler: !state.readingRuler));
   void setReadingSpeed(double speed) => updateSettings(state.copyWith(readingSpeed: speed > 3.0 ? 3.0 : speed));
   void setPreferredVoice(String voice) => updateSettings(state.copyWith(preferredVoice: voice));
   void toggleScreenReaderEnabled() => updateSettings(state.copyWith(screenReaderEnabled: !state.screenReaderEnabled));

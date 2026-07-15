@@ -32,10 +32,12 @@ class _LearningFlowReaderState extends ConsumerState<LearningFlowReader> {
   double _scrollDepth = 0.0;
   int _timeSpentSeconds = 0;
   Timer? _trackingTimer;
+  late final PlaybackController _playbackController;
 
   @override
   void initState() {
     super.initState();
+    _playbackController = ref.read(playbackControllerProvider.notifier);
 
     _trackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _timeSpentSeconds++;
@@ -65,7 +67,7 @@ class _LearningFlowReaderState extends ConsumerState<LearningFlowReader> {
   @override
   void dispose() {
     _trackingTimer?.cancel();
-    ref.read(playbackControllerProvider.notifier).stopForNavigation();
+    _playbackController.stopForNavigation();
     super.dispose();
   }
 

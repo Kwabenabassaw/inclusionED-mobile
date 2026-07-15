@@ -76,13 +76,30 @@ class PlaybackController extends Notifier<PlaybackData> {
       _positionSubscription?.cancel();
       _player.dispose();
     });
-    return const PlaybackData();
+    
+    ref.listen(accessibilityProvider, (prev, next) {
+      if (prev?.ttsEngine != next.ttsEngine) {
+        final newVoice = next.ttsEngine == 'native' ? next.nativeVoice : next.pollyVoice;
+        state = state.copyWith(voice: newVoice);
+      }
+    });
+
+    final settings = ref.read(accessibilityProvider);
+    return PlaybackData(
+      voice: settings.ttsEngine == 'native' ? settings.nativeVoice : settings.pollyVoice,
+    );
   }
 
   void _initTts() {
     _player.playerStateStream.listen((playerState) {
       if (playerState.processingState == ProcessingState.completed) {
-        state = const PlaybackData();
+        state = state.copyWith(
+          state: PlaybackState.idle,
+          currentTextToSpeak: '',
+          highlightStart: 0,
+          highlightEnd: 0,
+          playOffset: 0,
+        );
       }
     });
 
@@ -130,7 +147,13 @@ class PlaybackController extends Notifier<PlaybackData> {
     });
 
     _flutterTts.setCompletionHandler(() {
-      state = const PlaybackData();
+      state = state.copyWith(
+        state: PlaybackState.idle,
+        currentTextToSpeak: '',
+        highlightStart: 0,
+        highlightEnd: 0,
+        playOffset: 0,
+      );
     });
 
     _flutterTts.setProgressHandler((String text, int start, int end, String word) {

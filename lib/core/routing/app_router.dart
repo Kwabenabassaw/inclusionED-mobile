@@ -76,7 +76,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/assistant',
-        builder: (context, state) => const AssistantScreen(),
+        builder: (context, state) {
+          final courseId = state.uri.queryParameters['courseId'];
+          return AssistantScreen(courseId: courseId);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

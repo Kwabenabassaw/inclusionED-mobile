@@ -518,14 +518,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 theme: theme,
                 onTap: () => context.push('/profile/voice-settings'),
               ),
-              _buildSwitchTile(
-                leading: Icons.touch_app,
-                title: 'System Screen Reader Mode',
-                subtitle: 'Enable when using TalkBack or VoiceOver — silences app narration to prevent double-reading',
-                value: settings.screenReaderEnabled,
-                theme: theme,
-                onChanged: (val) => notifier.toggleScreenReaderEnabled(),
-              ),
+
               _buildInteractiveTile(
                 leading: Icons.menu_book,
                 title: 'Accessible Reader Test',
@@ -696,22 +689,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required ThemeData theme,
     required VoidCallback onTap,
   }) {
-    return SpeakOnTap(
-      textToSpeak: '$title. $subtitle',
-      onActivate: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 0.5),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 0.5),
         ),
-        child: ListTile(
-          leading: Icon(leading, color: theme.colorScheme.onSurfaceVariant),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))),
-          trailing: Icon(Icons.chevron_right, size: 20),
-          onTap: onTap,
-        ),
+      ),
+      child: ListTile(
+        leading: Icon(leading, color: theme.colorScheme.onSurfaceVariant),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))),
+        trailing: Icon(Icons.chevron_right, size: 20),
+        onTap: onTap,
       ),
     );
   }
@@ -724,21 +713,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     required ThemeData theme,
     required ValueChanged<bool> onChanged,
   }) {
-    return SpeakOnTap(
-      textToSpeak: subtitle != null ? '$title. $subtitle' : title,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 0.5),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 0.5),
         ),
-        child: SwitchListTile(
-          secondary: Icon(leading, color: theme.colorScheme.onSurfaceVariant),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))) : null,
-          value: value,
-          onChanged: onChanged,
-        ),
+      ),
+      child: SwitchListTile(
+        secondary: Icon(leading, color: theme.colorScheme.onSurfaceVariant),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))) : null,
+        value: value,
+        onChanged: onChanged,
       ),
     );
   }

@@ -239,24 +239,48 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             _highlightEnd = 0;
           });
           await _flutterTts.speak('Your options are. Option A: ${q.options![0]}');
+        } else if (type == 'TRUE_FALSE') {
+          setState(() {
+            _highlightChunk = 'option_0';
+            _speakingOptionIndex = 0;
+            _highlightStart = 0;
+            _highlightEnd = 0;
+          });
+          await _flutterTts.speak('Your options are. True');
         } else {
           _finishSpeaking();
         }
       } else if (_highlightChunk.startsWith('option_')) {
         final q = widget.quiz.questions[_currentQuestionIndex];
-        final options = q.options ?? [];
-        final nextOpt = _speakingOptionIndex + 1;
-        if (nextOpt < options.length) {
-          final letter = String.fromCharCode(65 + nextOpt);
-          setState(() {
-            _highlightChunk = 'option_$nextOpt';
-            _speakingOptionIndex = nextOpt;
-            _highlightStart = 0;
-            _highlightEnd = 0;
-          });
-          await _flutterTts.speak('Option $letter: ${options[nextOpt]}');
+        final type = q.type.toUpperCase().replaceAll('-', '_');
+        
+        if (type == 'TRUE_FALSE') {
+          if (_speakingOptionIndex == 0) {
+            setState(() {
+              _highlightChunk = 'option_1';
+              _speakingOptionIndex = 1;
+              _highlightStart = 0;
+              _highlightEnd = 0;
+            });
+            await _flutterTts.speak('False');
+          } else {
+            _finishSpeaking();
+          }
         } else {
-          _finishSpeaking();
+          final options = q.options ?? [];
+          final nextOpt = _speakingOptionIndex + 1;
+          if (nextOpt < options.length) {
+            final letter = String.fromCharCode(65 + nextOpt);
+            setState(() {
+              _highlightChunk = 'option_$nextOpt';
+              _speakingOptionIndex = nextOpt;
+              _highlightStart = 0;
+              _highlightEnd = 0;
+            });
+            await _flutterTts.speak('Option $letter: ${options[nextOpt]}');
+          } else {
+            _finishSpeaking();
+          }
         }
       } else {
         _finishSpeaking();
@@ -295,7 +319,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   void _handleVoiceInput(String voiceText) {
     if (voiceText.isEmpty) return;
 
-    final lower = voiceText.toLowerCase().trim();
+    // Remove common trailing punctuation added by speech-to-text
+    final lower = voiceText.toLowerCase().trim().replaceAll(RegExp(r'[\.,\?!]+$'), '');
 
     // 1. Check for navigation commands
     if (_isNextCommand(lower)) {
@@ -321,7 +346,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     }
 
     // 2. Try to match as an answer to the current question
-    _matchVoiceToAnswer(voiceText);
+    // Pass the already-cleaned `lower` string so matching is consistent.
+    _matchVoiceToAnswer(lower);
   }
 
   bool _isNextCommand(String lower) =>
@@ -366,10 +392,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     _previousQuestion();
   }
 
-  void _matchVoiceToAnswer(String voiceText) {
+  // Receives the already-cleaned lower-case string from _handleVoiceInput.
+  void _matchVoiceToAnswer(String lower) {
     final question = widget.quiz.questions[_currentQuestionIndex];
     final type = question.type.toUpperCase().replaceAll('-', '_');
-    final lower = voiceText.toLowerCase().trim();
 
     if (type == 'MULTIPLE_CHOICE') {
       final options = question.options ?? [];
@@ -399,9 +425,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         _flutterTts.speak('Please tap the mic and say true or false.');
       }
     } else {
-      // short-answer / fill-blank: just transcribe
-      setState(() => _selectedAnswers[_currentQuestionIndex] = voiceText);
-      _flutterTts.speak('Recorded: $voiceText.');
+      // short-answer / fill-blank: just transcribe the cleaned text
+      setState(() => _selectedAnswers[_currentQuestionIndex] = lower);
+      _flutterTts.speak('Recorded: $lower.');
     }
   }
 
@@ -414,6 +440,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     if (singleLetter.hasMatch(lower)) {
       final idx = lower.codeUnitAt(0) - 'a'.codeUnitAt(0);
       if (idx < options.length) return options[idx];
+    }
+
+    // Phonetic single letter match
+    final phoneticMap = {
+      0: ['eh', 'hey', 'eight', 'aye'],
+      1: ['be', 'bee', 'beat'],
+      2: ['see', 'sea', 'si'],
+      3: ['de', 'dee', 'the'],
+    };
+    for (var i = 0; i < options.length; i++) {
+      if (phoneticMap.containsKey(i) && phoneticMap[i]!.contains(lower)) {
+        return options[i];
+      }
     }
 
     // Ordinal match
@@ -437,8 +476,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       if (idx < options.length) return options[idx];
     }
 
-    // Fuzzy text match
-    double bestScore = 0.4;
+    // Fuzzy text match — lower threshold to improve recognition of partial words
+    double bestScore = 0.3;
     String? bestMatch;
     for (final option in options) {
       final score = option.toLowerCase().similarityTo(lower);
@@ -687,10 +726,13 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             ),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
-            semanticsLabel: 'Quiz progress',
-            semanticsValue: '${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}',
+          Semantics(
+            label: 'Quiz progress: ${_currentQuestionIndex + 1} of ${widget.quiz.questions.length}',
+            child: ExcludeSemantics(
+              child: LinearProgressIndicator(
+                value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
+              ),
+            ),
           ),
           // Show what the mic is hearing at the top if listening
           Consumer(
@@ -752,16 +794,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 ),
               ],
             ),
-            child: IconButton(
-              iconSize: 32,
-              onPressed: () => _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]),
-              icon: Icon(
-                _isSpeaking
-                    ? Icons.stop_circle
-                    : Icons.play_circle_fill,
-                color: Theme.of(context).colorScheme.primary,
+            child: Semantics(
+              button: true,
+              label: _isSpeaking ? 'Stop audio' : 'Play audio',
+              child: IconButton(
+                iconSize: 32,
+                onPressed: () => _playQuestionAudio(widget.quiz.questions[_currentQuestionIndex]),
+                icon: Icon(
+                  _isSpeaking
+                      ? Icons.stop_circle
+                      : Icons.play_circle_fill,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                tooltip: _isSpeaking ? 'Stop' : 'Play',
               ),
-              tooltip: _isSpeaking ? 'Stop' : 'Play',
             ),
           ),
           SizedBox(width: 16),
@@ -918,6 +964,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               highlightStart: _highlightStart,
               highlightEnd: _highlightEnd,
               currentChunk: _highlightChunk,
+              isReadingRulerActive: ref.watch(accessibilityProvider).readingRuler && _isSpeaking,
             ),
           );
         }),
@@ -958,6 +1005,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   Widget _buildTrueFalseButton(
       int questionIndex, String currentAnswer, String value, int optIndex, bool isActive) {
     final isSelected = currentAnswer == value;
+    final bool isReadingRulerActive = ref.watch(accessibilityProvider).readingRuler && _isSpeaking;
+    final String highlightChunkName = isActive ? 'option_$optIndex' : '';
+    final bool isThisChunkActive = isActive && _highlightChunk.isNotEmpty && _highlightChunk == highlightChunkName;
+
     return Semantics(
       button: true,
       selected: isSelected,
@@ -993,9 +1044,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             style: TextStyle(
               color: isSelected
                   ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurface,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  : (isReadingRulerActive && !isThisChunkActive)
+                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)
+                      : Theme.of(context).colorScheme.onSurface,
               fontSize: 16 * _fontScaleMultiplier,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -1016,14 +1069,21 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       required String chunkName,
       required bool isActive,
   }) {
-    final bool shouldHighlight = isActive &&
-        _highlightChunk == chunkName &&
+    final settings = ref.watch(accessibilityProvider);
+    final bool isRulerEnabled = settings.readingRuler && _isSpeaking;
+    final bool isThisChunkActive = isActive && _highlightChunk == chunkName;
+    
+    final TextStyle effectiveStyle = (isRulerEnabled && !isThisChunkActive)
+        ? baseStyle.copyWith(color: baseStyle.color?.withValues(alpha: 0.3) ?? Colors.grey.withValues(alpha: 0.3))
+        : baseStyle;
+
+    final bool shouldHighlight = isThisChunkActive &&
         _highlightEnd > _highlightStart &&
         _highlightStart < text.length;
 
     if (!shouldHighlight) {
       return Text(text,
-          style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+          style: effectiveStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
     }
 
     final int start = _highlightStart.clamp(0, text.length);
@@ -1031,18 +1091,18 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     if (start >= end) {
       return Text(text,
-          style: baseStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
+          style: effectiveStyle, textScaler: TextScaler.linear(_fontScaleMultiplier));
     }
 
     return RichText(
       textScaler: TextScaler.linear(_fontScaleMultiplier),
       text: TextSpan(
-        style: baseStyle,
+        style: effectiveStyle,
         children: [
           TextSpan(text: text.substring(0, start)),
           TextSpan(
             text: text.substring(start, end),
-            style: baseStyle.copyWith(
+            style: effectiveStyle.copyWith(
               color: Colors.black,
               backgroundColor: const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,
@@ -1103,6 +1163,7 @@ class _OptionButton extends StatefulWidget {
   final int highlightStart;
   final int highlightEnd;
   final int optionTextPrefixLen; // e.g., 'Option A: '.length = 10
+  final bool isReadingRulerActive;
 
   const _OptionButton({
     required this.letter,
@@ -1115,6 +1176,7 @@ class _OptionButton extends StatefulWidget {
     this.highlightStart = 0,
     this.highlightEnd = 0,
     this.optionTextPrefixLen = 0,
+    this.isReadingRulerActive = false,
   });
 
   @override
@@ -1241,12 +1303,16 @@ class _OptionButtonState extends State<_OptionButton>
   Widget _buildOptionHighlightedText(String text, TextStyle baseStyle) {
     // Only highlight when this option's chunk is the currently active chunk.
     final bool isActive = widget.highlightChunkName.isNotEmpty &&
-        widget.currentChunk == widget.highlightChunkName &&
-        widget.highlightEnd > widget.highlightStart;
+        widget.currentChunk == widget.highlightChunkName;
+    final bool shouldHighlight = isActive && widget.highlightEnd > widget.highlightStart;
+        
+    final TextStyle effectiveStyle = (widget.isReadingRulerActive && !isActive)
+        ? baseStyle.copyWith(color: baseStyle.color?.withValues(alpha: 0.3) ?? Colors.grey.withValues(alpha: 0.3))
+        : baseStyle;
 
-    if (!isActive) {
+    if (!shouldHighlight) {
       return Text(text,
-          style: baseStyle,
+          style: effectiveStyle,
           textScaler: TextScaler.linear(widget.fontScaleMultiplier));
     }
 
@@ -1260,19 +1326,19 @@ class _OptionButtonState extends State<_OptionButton>
 
     if (start >= end) {
       return Text(text,
-          style: baseStyle,
+          style: effectiveStyle,
           textScaler: TextScaler.linear(widget.fontScaleMultiplier));
     }
 
     return RichText(
       textScaler: TextScaler.linear(widget.fontScaleMultiplier),
       text: TextSpan(
-        style: baseStyle,
+        style: effectiveStyle,
         children: [
           TextSpan(text: text.substring(0, start)),
           TextSpan(
             text: text.substring(start, end),
-            style: baseStyle.copyWith(
+            style: effectiveStyle.copyWith(
               color: Colors.black,
               backgroundColor: const Color(0xFFFDE047),
               fontWeight: FontWeight.bold,

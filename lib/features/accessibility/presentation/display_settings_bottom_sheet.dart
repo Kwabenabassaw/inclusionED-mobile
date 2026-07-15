@@ -70,6 +70,16 @@ void showDisplaySettingsBottomSheet(BuildContext context) {
                     ),
                     SizedBox(height: 12),
 
+                    // Reading Ruler Toggle
+                    SwitchListTile(
+                      title: Text('Reading Ruler (Focus Mode)', style: theme.textTheme.titleMedium),
+                      subtitle: Text('Dims unread text during voice playback', style: theme.textTheme.bodySmall),
+                      value: settings.readingRuler,
+                      onChanged: (val) => notifier.toggleReadingRuler(),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    SizedBox(height: 12),
+
                     // Line Spacing
                     Text('Line Spacing', style: theme.textTheme.titleMedium),
                     Row(

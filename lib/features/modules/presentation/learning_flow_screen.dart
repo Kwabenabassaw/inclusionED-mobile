@@ -41,12 +41,22 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isVisible = true;
+  
+  late final PlaybackController _playbackController;
+  late final dynamic _hideGlobalFabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _playbackController = ref.read(playbackControllerProvider.notifier);
+    _hideGlobalFabController = ref.read(hideGlobalFabProvider.notifier);
+  }
 
   @override
   void dispose() {
     // Safety net: force stop TTS when leaving the whole learning flow
-    ref.read(playbackControllerProvider.notifier).stopForNavigation();
-    ref.read(hideGlobalFabProvider.notifier).state = false;
+    _playbackController.stopForNavigation();
+    _hideGlobalFabController.state = false;
     _pageController.dispose();
     super.dispose();
   }
@@ -205,12 +215,16 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
                    
                   // ),
                   SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(Icons.text_fields_rounded, color: Theme.of(context).colorScheme.primary),
-                    tooltip: 'Display Settings',
-                    onPressed: () {
-                      showDisplaySettingsBottomSheet(context);
-                    },
+                  Semantics(
+                    button: true,
+                    label: 'Display settings',
+                    child: IconButton(
+                      icon: Icon(Icons.text_fields_rounded, color: Theme.of(context).colorScheme.primary),
+                      tooltip: 'Display Settings',
+                      onPressed: () {
+                        showDisplaySettingsBottomSheet(context);
+                      },
+                    ),
                   ),
                 ]
               ],
@@ -220,13 +234,14 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
         
         // Top Progress Bar
         Semantics(
-          label: 'Learning Progress',
-          value: 'Page ${_currentPage + 1} of $totalPages',
-          child: LinearProgressIndicator(
-            value: (_currentPage + 1) / totalPages,
-            minHeight: 4,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+          label: 'Learning Progress: Page ${_currentPage + 1} of $totalPages',
+          child: ExcludeSemantics(
+            child: LinearProgressIndicator(
+              value: (_currentPage + 1) / totalPages,
+              minHeight: 4,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+            ),
           ),
         ),
         

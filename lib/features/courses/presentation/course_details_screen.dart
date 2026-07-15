@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/courses/data/course_repository.dart';
 import 'package:opencampus_lms/features/modules/data/module_repository.dart';
@@ -79,6 +80,15 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
             scrolledUnderElevation: 0,
             backgroundColor: theme.colorScheme.surface,
             foregroundColor: theme.colorScheme.onSurface,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.smart_toy),
+                tooltip: 'Course AI Assistant',
+                onPressed: () {
+                  context.push('/assistant?courseId=${widget.courseId}');
+                },
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             child: Column(

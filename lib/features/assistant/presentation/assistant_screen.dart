@@ -4,9 +4,13 @@ import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:opencampus_lms/core/providers/voice_providers.dart';
+import 'package:opencampus_lms/core/routing/app_router.dart';
+import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
+import 'package:opencampus_lms/features/assistant/data/ai_chat_service.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
-  const AssistantScreen({super.key});
+  final String? courseId;
+  const AssistantScreen({super.key, this.courseId});
 
   @override
   ConsumerState<AssistantScreen> createState() => _AssistantScreenState();
@@ -35,6 +39,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   void dispose() {
     _transcriptSub?.cancel();
     _controller.dispose();
+    ref.read(fallbackTtsProvider).stop();
     super.dispose();
   }
 
@@ -100,14 +105,24 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
         });
         await ref.read(voiceActionHandlerProvider).handleAction(actionData, context, '');
       } else {
-        // Invalid intent
-        setState(() {
-          _messages.add({
-            'role': 'assistant',
-            'content': 'Sorry, I didn\'t catch that. You can say things like "Open Courses", "Go back", or "Read screen".',
+        // Fallback to AI Learning Companion
+        final auth = ref.read(authRepositoryProvider);
+        final studentId = auth.currentUser?.uid ?? 'anonymous';
+        
+        final courseId = widget.courseId;
+
+        final aiService = ref.read(aiChatServiceProvider);
+        final response = await aiService.sendMessage(studentId, courseId, text);
+        
+        if (mounted) {
+          setState(() {
+            _messages.add({
+              'role': 'assistant',
+              'content': response,
+            });
           });
-        });
-        await ref.read(voiceActionHandlerProvider).handleAction(null, context, '');
+          await ref.read(fallbackTtsProvider).speak(response);
+        }
       }
     }
   }
