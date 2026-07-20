@@ -12,6 +12,9 @@ import '../../reader/presentation/utils/highlight_markdown_extension.dart';
 import '../../reader/data/user_activity_repository.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
+import 'package:opencampus_lms/features/gamification/data/gamification_repository.dart';
+import 'package:opencampus_lms/features/gamification/presentation/xp_celebration_overlay.dart';
+import 'package:opencampus_lms/shared/models/user_gamification.dart';
 import 'package:opencampus_lms/shared/models/user_activity.dart';
 import 'package:markdown/markdown.dart' as md;
 
@@ -123,12 +126,43 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
                         
                         await ref.read(userActivityRepositoryProvider).saveHighlight(highlight);
                         
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Highlight saved!'),
-                            behavior: SnackBarBehavior.floating,
-                            margin: EdgeInsets.only(bottom: 120, left: 16, right: 16),
-                          ));
+                        // Award XP
+                        try {
+                          final result = await ref.read(gamificationRepositoryProvider).awardXp(
+                            XpEvent.addedHighlight,
+                            highlightAdded: true,
+                          );
+
+                          if (!context.mounted) return;
+
+                          if (result.leveledUp || result.newBadges.isNotEmpty) {
+                            await XpCelebrationOverlay.show(
+                              context,
+                              newLevel: result.stats.level,
+                              xpAwarded: XpEvent.addedHighlight,
+                              newBadges: result.newBadges,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: XpToast(xp: XpEvent.addedHighlight, label: 'Highlight saved!'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                margin: const EdgeInsets.only(bottom: 120, left: 16, right: 16),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          debugPrint('Gamification error: $e');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('Highlight saved!'),
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.only(bottom: 120, left: 16, right: 16),
+                            ));
+                          }
                         }
                       },
                       onAddNote: () {

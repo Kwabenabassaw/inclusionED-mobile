@@ -14,7 +14,6 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:opencampus_lms/features/notifications/data/fcm_service.dart';
 import 'package:opencampus_lms/core/providers/wake_word_controller.dart';
 import 'package:opencampus_lms/core/widgets/global_listening_indicator.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
