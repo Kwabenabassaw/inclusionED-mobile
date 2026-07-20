@@ -24,6 +24,7 @@ import 'package:opencampus_lms/features/accessibility/smart_audio_reader_screen.
 import 'package:opencampus_lms/features/profile/presentation/voice_settings_screen.dart';
 import 'package:opencampus_lms/features/profile/presentation/notification_settings_screen.dart';
 import 'package:opencampus_lms/features/reader/screens/accessible_reader_screen.dart';
+import 'package:opencampus_lms/features/gamification/presentation/achievements_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -86,6 +87,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialPrompt: initialPrompt,
           );
         },
+      ),
+      GoRoute(
+        path: '/achievements',
+        builder: (context, state) => const AchievementsScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

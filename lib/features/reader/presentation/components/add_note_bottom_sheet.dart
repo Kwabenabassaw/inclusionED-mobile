@@ -4,6 +4,9 @@ import 'package:uuid/uuid.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/shared/models/user_activity.dart';
 import '../../data/user_activity_repository.dart';
+import 'package:opencampus_lms/features/gamification/data/gamification_repository.dart';
+import 'package:opencampus_lms/features/gamification/presentation/xp_celebration_overlay.dart';
+import 'package:opencampus_lms/shared/models/user_gamification.dart';
 
 class AddNoteBottomSheet extends ConsumerStatefulWidget {
   final String moduleId;
@@ -82,16 +85,50 @@ class _AddNoteBottomSheetState extends ConsumerState<AddNoteBottomSheet> {
 
       await repository.saveNote(note);
 
+      // Award Gamification XP for note taking
       if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Note saved successfully!')),
-        );
+        try {
+          final result = await ref.read(gamificationRepositoryProvider).awardXp(
+            XpEvent.addedNote,
+            noteAdded: true,
+          );
+
+          if (!mounted) return;
+
+          Navigator.of(context).pop();
+
+          if (result.leveledUp || result.newBadges.isNotEmpty) {
+            await XpCelebrationOverlay.show(
+              context,
+              newLevel: result.stats.level,
+              xpAwarded: XpEvent.addedNote,
+              newBadges: result.newBadges,
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: XpToast(xp: XpEvent.addedNote, label: 'Note added!'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('Gamification error: $e');
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Note saved successfully!')),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save note: \$e')),
+          SnackBar(content: Text('Failed to save note: $e')),
         );
       }
     } finally {
