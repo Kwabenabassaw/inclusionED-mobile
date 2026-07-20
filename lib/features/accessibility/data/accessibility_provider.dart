@@ -29,6 +29,7 @@ class AccessibilitySettings {
   final double nativePitch;
   final double nativeVolume;
   final String nativeVoice;
+  final bool continuousListening;
 
   const AccessibilitySettings({
     this.preset = AccessibilityPreset.standard,
@@ -56,6 +57,7 @@ class AccessibilitySettings {
     this.nativePitch = 1.0,
     this.nativeVolume = 1.0,
     this.nativeVoice = 'default',
+    this.continuousListening = false,
   });
 
   AccessibilitySettings copyWith({
@@ -84,6 +86,7 @@ class AccessibilitySettings {
     double? nativePitch,
     double? nativeVolume,
     String? nativeVoice,
+    bool? continuousListening,
   }) {
     return AccessibilitySettings(
       preset: preset ?? this.preset,
@@ -111,6 +114,7 @@ class AccessibilitySettings {
       nativePitch: nativePitch ?? this.nativePitch,
       nativeVolume: nativeVolume ?? this.nativeVolume,
       nativeVoice: nativeVoice ?? this.nativeVoice,
+      continuousListening: continuousListening ?? this.continuousListening,
     );
   }
 }
@@ -148,6 +152,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
       nativePitch: prefs.getDouble('nativePitch') ?? 1.0,
       nativeVolume: prefs.getDouble('nativeVolume') ?? 1.0,
       nativeVoice: prefs.getString('nativeVoice') ?? 'default',
+      continuousListening: prefs.getBool('continuousListening') ?? false,
     );
   }
 
@@ -179,6 +184,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
     await prefs.setDouble('nativePitch', newSettings.nativePitch);
     await prefs.setDouble('nativeVolume', newSettings.nativeVolume);
     await prefs.setString('nativeVoice', newSettings.nativeVoice);
+    await prefs.setBool('continuousListening', newSettings.continuousListening);
   }
 
   void applyPreset(AccessibilityPreset preset) {
@@ -212,7 +218,6 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
         );
         break;
       case AccessibilityPreset.standard:
-      default:
         newSettings = const AccessibilitySettings(
           preset: AccessibilityPreset.standard,
         );
@@ -242,6 +247,7 @@ class AccessibilityNotifier extends Notifier<AccessibilitySettings> {
   void setNativePitch(double val) => updateSettings(state.copyWith(nativePitch: val));
   void setNativeVolume(double val) => updateSettings(state.copyWith(nativeVolume: val));
   void setNativeVoice(String val) => updateSettings(state.copyWith(nativeVoice: val));
+  void toggleContinuousListening() => updateSettings(state.copyWith(continuousListening: !state.continuousListening));
 }
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {

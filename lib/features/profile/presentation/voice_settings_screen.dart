@@ -174,6 +174,29 @@ class _VoiceSettingsScreenState extends ConsumerState<VoiceSettingsScreen> {
                     .changeSettingsAndResume();
               },
             ),
+            SizedBox(height: 16),
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              child: SwitchListTile(
+                title: Text(
+                  'Continuous Listening (Wake Word)',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text('Say "Hey Inclusion Ed" or "Porcupine" to activate voice commands.'),
+                value: settings.continuousListening,
+                onChanged: (val) {
+                  notifier.toggleContinuousListening();
+                },
+                secondary: Icon(Icons.mic, color: theme.colorScheme.primary),
+              ),
+            ),
             SizedBox(height: 32),
           ],
         ),

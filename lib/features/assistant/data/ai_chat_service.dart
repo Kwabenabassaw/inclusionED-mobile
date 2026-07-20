@@ -9,11 +9,7 @@ final aiChatServiceProvider = Provider<AiChatService>((ref) {
 class AiChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
-  late final GenerativeModel _model;
-
-  AiChatService() {
-    _model = FirebaseAI.googleAI().generativeModel(model: 'gemini-2.5-flash');
-  }
+  AiChatService();
 
   Future<String> _buildCourseContext(String courseId) async {
     try {
@@ -48,6 +44,7 @@ class AiChatService {
       }
       return context;
     } catch (e) {
+      // ignore: avoid_print
       print("Error building course context: $e");
       return "Failed to retrieve specific course materials.";
     }
@@ -125,6 +122,7 @@ class AiChatService {
 
       return replyText;
     } catch (e) {
+      // ignore: avoid_print
       print('AI Chat Error: $e');
       return "Sorry, I am having trouble thinking right now. Please try again later.";
     }

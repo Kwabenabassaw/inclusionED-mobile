@@ -17,6 +17,7 @@ import 'components/learning_flow_reader.dart';
 import 'components/playback_controller.dart';
 import 'components/learning_flow_summary.dart';
 import 'components/learning_flow_completion.dart';
+import 'components/active_recall_screen.dart';
 
 import 'quiz_screen.dart';
 import 'package:opencampus_lms/features/accessibility/presentation/display_settings_bottom_sheet.dart';
@@ -150,6 +151,12 @@ class _LearningFlowScreenState extends ConsumerState<LearningFlowScreen> {
       LearningFlowReader(courseId: widget.courseId, moduleId: widget.moduleId),
       LearningFlowSummary(module: module),
       if (quiz != null) QuizScreen(courseId: widget.courseId, quiz: quiz, embedded: true),
+      // Phase E: Active Recall — review notes, highlights & flashcards before finishing
+      ActiveRecallScreen(
+        module: module,
+        courseId: widget.courseId,
+        moduleId: widget.moduleId,
+      ),
       LearningFlowCompletion(
         module: module,
         onComplete: () {

@@ -12,12 +12,14 @@ class OfflineSyncService {
   late Box<String> _enrollmentsBox;
   late Box<String> _pendingEventsBox;
   late Box<String> _pendingQuizzesBox;
+  late Box<String> _pendingUserActivityBox;
 
   OfflineSyncService() {
     _coursesBox = Hive.box<String>('courses_cache');
     _enrollmentsBox = Hive.box<String>('enrollments_cache');
     _pendingEventsBox = Hive.box<String>('pending_learning_events');
     _pendingQuizzesBox = Hive.box<String>('pending_quiz_submissions');
+    _pendingUserActivityBox = Hive.box<String>('pending_user_activity');
   }
 
   // --- Caching Models ---
@@ -60,6 +62,12 @@ class OfflineSyncService {
     debugPrint('Queued quiz submission offline: $id');
   }
 
+  void queueUserActivity(Map<String, dynamic> activityData) {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    _pendingUserActivityBox.put(id, jsonEncode(activityData));
+    debugPrint('Queued user activity offline: $id');
+  }
+
   // --- Synchronization Logic ---
   
   Future<void> syncPendingData() async {
@@ -98,6 +106,37 @@ class OfflineSyncService {
           debugPrint('Successfully synced quiz submission: $key');
         } catch (e) {
           debugPrint('Failed to sync quiz submission: $e');
+        }
+      }
+    }
+
+    // 3. Sync User Activity
+    final activityKeys = _pendingUserActivityBox.keys.toList();
+    for (var key in activityKeys) {
+      final activityDataStr = _pendingUserActivityBox.get(key);
+      if (activityDataStr != null) {
+        final activityData = jsonDecode(activityDataStr) as Map<String, dynamic>;
+        try {
+          // The structure of queued user activity determines where it goes.
+          final String userId = activityData['userId'];
+          final String type = activityData['type']; // 'highlights', 'notes', 'flashcards'
+          final String docId = activityData['id'];
+          
+          // Remove the metadata before saving to firestore
+          activityData.remove('userId');
+          activityData.remove('type');
+
+          await _firestore
+              .collection('user_activity')
+              .doc(userId)
+              .collection(type)
+              .doc(docId)
+              .set(activityData);
+
+          await _pendingUserActivityBox.delete(key);
+          debugPrint('Successfully synced user activity: $key');
+        } catch (e) {
+          debugPrint('Failed to sync user activity: $e');
         }
       }
     }

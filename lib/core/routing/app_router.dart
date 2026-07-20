@@ -13,6 +13,7 @@ import 'package:opencampus_lms/features/dashboard/presentation/dashboard_screen.
 import 'package:opencampus_lms/features/courses/presentation/courses_screen.dart';
 import 'package:opencampus_lms/features/courses/presentation/course_details_screen.dart';
 import 'package:opencampus_lms/features/courses/presentation/pdf_viewer_screen.dart';
+import 'package:opencampus_lms/features/assignments/presentation/assignment_details_screen.dart';
 import 'package:opencampus_lms/features/modules/presentation/learning_flow_screen.dart';
 import 'package:opencampus_lms/features/modules/presentation/quiz_player_wrapper.dart';
 import 'package:opencampus_lms/features/assistant/presentation/assistant_screen.dart';
@@ -21,16 +22,17 @@ import 'package:opencampus_lms/features/notifications/presentation/notifications
 import 'package:opencampus_lms/features/profile/presentation/profile_screen.dart';
 import 'package:opencampus_lms/features/accessibility/smart_audio_reader_screen.dart';
 import 'package:opencampus_lms/features/profile/presentation/voice_settings_screen.dart';
+import 'package:opencampus_lms/features/profile/presentation/notification_settings_screen.dart';
 import 'package:opencampus_lms/features/reader/screens/accessible_reader_screen.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 // Provide the GoRouter instance
 final routerProvider = Provider<GoRouter>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: GoRouterRefreshStream(authRepository.authStateChanges),
     redirect: (context, state) {
@@ -125,6 +127,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                         ),
                       ),
                       GoRoute(
+                        path: 'assignments/:assignmentId',
+                        builder: (context, state) => AssignmentDetailsScreen(
+                          courseId: state.pathParameters['courseId']!,
+                          assignmentId: state.pathParameters['assignmentId']!,
+                        ),
+                      ),
+                      GoRoute(
                         path: 'pdf',
                         builder: (context, state) {
                           final extra = state.extra as Map<String, dynamic>? ?? {};
@@ -176,6 +185,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'voice-settings',
                     builder: (context, state) => const VoiceSettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'notification-settings',
+                    builder: (context, state) => const NotificationSettingsScreen(),
                   ),
                 ],
               ),

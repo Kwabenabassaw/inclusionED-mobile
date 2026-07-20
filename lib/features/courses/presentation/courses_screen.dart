@@ -117,12 +117,15 @@ class _MyCoursesTab extends ConsumerWidget {
                 try {
                   switch (statusFilter) {
                     case 'PENDING':
+                      // ignore: unused_result
                       await ref.refresh(pendingCoursesProvider.future);
                       break;
                     case 'COMPLETED':
+                      // ignore: unused_result
                       await ref.refresh(completedCoursesProvider.future);
                       break;
                     default:
+                      // ignore: unused_result
                       await ref.refresh(activeCoursesProvider.future);
                       break;
                   }
@@ -310,6 +313,7 @@ class _CatalogTab extends ConsumerWidget {
             data: (courses) {
               Future<void> onRefresh() async {
                 try {
+                  // ignore: unused_result
                   await ref.refresh(availableCoursesProvider.future);
                 } catch (_) {}
               }

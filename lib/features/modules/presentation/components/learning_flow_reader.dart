@@ -73,8 +73,8 @@ class _LearningFlowReaderState extends ConsumerState<LearningFlowReader> {
 
   @override
   Widget build(BuildContext context) {
-    final playback = ref.watch(playbackControllerProvider);
-    final accessSettings = ref.watch(accessibilityProvider);
+    ref.watch(playbackControllerProvider);
+    ref.watch(accessibilityProvider);
 
     final asyncContents = ref.watch(
       moduleContentsProvider((

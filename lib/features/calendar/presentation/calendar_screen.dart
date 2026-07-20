@@ -81,6 +81,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           return RefreshIndicator(
             onRefresh: () async {
               try {
+                // ignore: unused_result
                 await ref.refresh(upcomingEventsProvider.future);
               } catch (_) {}
             },

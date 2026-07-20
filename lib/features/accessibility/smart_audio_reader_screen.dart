@@ -42,10 +42,6 @@ class _SmartAudioReaderScreenState extends State<SmartAudioReaderScreen> {
     });
   }
 
-  Future<void> _handleEngineSwitch(TtsEngineType selectedEngine) async {
-    await _ttsController.switchEngine(selectedEngine);
-  }
-
   List<TextSpan> _buildHighlightedText() {
     if (!_ttsController.isPlaying || _highlightEnd == 0) {
       return [TextSpan(text: widget.textToRead, style: TextStyle(color: Theme.of(context).colorScheme.onSurface))];

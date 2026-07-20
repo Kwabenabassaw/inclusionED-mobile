@@ -38,11 +38,20 @@ class NotificationRepository {
 
     if (query.docs.isEmpty) return;
 
-    final batch = _firestore.batch();
-    for (final doc in query.docs) {
-      batch.update(doc.reference, {'read': true});
+    // Firestore batch limit is 500 operations
+    final chunkSize = 500;
+    for (var i = 0; i < query.docs.length; i += chunkSize) {
+      final batch = _firestore.batch();
+      final chunk = query.docs.sublist(
+        i, 
+        i + chunkSize > query.docs.length ? query.docs.length : i + chunkSize
+      );
+      
+      for (final doc in chunk) {
+        batch.update(doc.reference, {'read': true});
+      }
+      await batch.commit();
     }
-    await batch.commit();
   }
 }
 

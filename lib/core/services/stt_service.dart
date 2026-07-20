@@ -20,7 +20,7 @@ class SttService {
         onResult: (result) {
           onResult(result.recognizedWords);
         },
-        listenMode: listenMode,
+        listenOptions: SpeechListenOptions(listenMode: listenMode),
       );
     }
   }

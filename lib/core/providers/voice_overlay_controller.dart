@@ -17,6 +17,9 @@ class VoiceOverlayData {
   /// Resolved intent map on success; null on failure or before processing.
   final Map<String, dynamic>? resolvedIntent;
 
+  /// Stores a pending action that requires more context/parameters (e.g., 'openCourse' missing course name).
+  final String? pendingAction;
+
   /// True when the last processing attempt produced no usable intent.
   final bool didFail;
 
@@ -24,6 +27,7 @@ class VoiceOverlayData {
     this.state = VoiceCommandState.idle,
     this.transcript = '',
     this.resolvedIntent,
+    this.pendingAction,
     this.didFail = false,
   });
 
@@ -31,13 +35,16 @@ class VoiceOverlayData {
     VoiceCommandState? state,
     String? transcript,
     Map<String, dynamic>? resolvedIntent,
+    String? pendingAction,
     bool? didFail,
     bool clearIntent = false,
+    bool clearPendingAction = false,
   }) {
     return VoiceOverlayData(
       state: state ?? this.state,
       transcript: transcript ?? this.transcript,
       resolvedIntent: clearIntent ? null : resolvedIntent ?? this.resolvedIntent,
+      pendingAction: clearPendingAction ? null : pendingAction ?? this.pendingAction,
       didFail: didFail ?? this.didFail,
     );
   }
@@ -218,13 +225,31 @@ class VoiceOverlayController extends Notifier<VoiceOverlayData> {
     debugPrint('[VoiceCmd] transcript: "$transcript"');
 
     try {
-      final intent = _parser.parse(transcript);
+      final intent = _parser.parse(transcript, pendingAction: state.pendingAction);
 
       if (intent != null) {
+        if (intent['pending'] == true) {
+          // Keep overlay active, ask follow-up
+          await _earconTts.speak("Which course?");
+          state = state.copyWith(
+            state: VoiceCommandState.listening, // go back to listening
+            pendingAction: intent['action'],
+          );
+          
+          _transcriptSub?.cancel();
+          _interimSub?.cancel();
+          await _engine.stopListening();
+          await Future.delayed(const Duration(milliseconds: 1500));
+          _isActive = false;
+          await startListening(engine: _engine, parser: _parser);
+          return;
+        }
+
         state = state.copyWith(
           state: VoiceCommandState.result,
           resolvedIntent: intent,
           didFail: false,
+          clearPendingAction: true,
         );
       } else {
         _handleFailure();

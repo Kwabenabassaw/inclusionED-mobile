@@ -4,7 +4,6 @@ import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/dashboard/presentation/components/welcome_header.dart';
 import 'package:opencampus_lms/features/dashboard/presentation/components/schedule_overview.dart';
 import 'package:opencampus_lms/features/dashboard/presentation/components/active_learning_card.dart';
-import 'package:opencampus_lms/features/dashboard/presentation/components/assistant_shortcut.dart';
 import 'package:opencampus_lms/features/dashboard/presentation/components/current_courses_list.dart';
 import 'package:opencampus_lms/features/courses/data/course_repository.dart';
 import 'package:opencampus_lms/features/dashboard/data/dashboard_repository.dart';

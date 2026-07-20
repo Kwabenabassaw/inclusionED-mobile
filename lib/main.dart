@@ -11,6 +11,9 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 import 'package:opencampus_lms/firebase_options.dart';
 import 'package:responsive_scaler/responsive_scaler.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:opencampus_lms/features/notifications/data/fcm_service.dart';
+import 'package:opencampus_lms/core/providers/wake_word_controller.dart';
+import 'package:opencampus_lms/core/widgets/global_listening_indicator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +50,7 @@ void main() async {
     await Hive.openBox<String>('enrollments_cache');
     await Hive.openBox<String>('pending_learning_events');
     await Hive.openBox<String>('pending_quiz_submissions');
+    await Hive.openBox<String>('pending_user_activity');
   } catch (e) {
     debugPrint('Hive initialization failed: $e');
     // If Hive fails, we continue without offline caching instead of crashing.
@@ -83,7 +87,25 @@ class _InclusiveEdStudentAppState extends ConsumerState<InclusiveEdStudentApp> {
             case 'ANNOUNCEMENT':
             case 'NEW_WEEK':
             case 'ENROLLMENT':
+            case 'COURSE_PUBLISHED':
               router.go('/courses/$referenceId');
+              break;
+            case 'LESSON':
+              // Assuming referenceId is courseId:moduleId or just courseId
+              // Let's route to courseId for now unless it has a colon
+              final parts = referenceId.split(':');
+              if (parts.length == 2) {
+                router.go('/courses/${parts[0]}/modules/${parts[1]}');
+              } else {
+                router.go('/courses/$referenceId');
+              }
+              break;
+            case 'ASSIGNMENT':
+              // Route to course detail until assignment detail screen exists
+              router.go('/courses/$referenceId');
+              break;
+            case 'CALENDAR_EVENT':
+              router.go('/calendar');
               break;
             case 'QUIZ':
               // Assuming referenceId is courseId:quizId
@@ -108,6 +130,9 @@ class _InclusiveEdStudentAppState extends ConsumerState<InclusiveEdStudentApp> {
   Widget build(BuildContext context) {
     final goRouter = ref.watch(routerProvider);
     final accessibilitySettings = ref.watch(accessibilityProvider);
+    
+    // Eagerly initialize the wake word controller so it can listen to continuousListening
+    ref.watch(wakeWordControllerProvider);
 
     return MaterialApp.router(
       title: 'OpenCampus LMS',
@@ -121,10 +146,12 @@ class _InclusiveEdStudentAppState extends ConsumerState<InclusiveEdStudentApp> {
           ),
           child: Builder(
             builder: (contextWithMediaQuery) {
-              return ResponsiveScaler.scale(
-                context: contextWithMediaQuery,
-                child: child!,
-                useMaxAccessibility: true,
+              return GlobalListeningIndicator(
+                child: ResponsiveScaler.scale(
+                  context: contextWithMediaQuery,
+                  child: child!,
+                  useMaxAccessibility: true,
+                ),
               );
             },
           ),

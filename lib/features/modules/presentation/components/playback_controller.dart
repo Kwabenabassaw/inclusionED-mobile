@@ -385,8 +385,6 @@ class PlaybackController extends Notifier<PlaybackData> {
   }
 
   Future<void> changeSettingsAndResume() async {
-    final ttsEngine = ref.read(accessibilityProvider).ttsEngine;
-    
     await _applyEngineSettings();
   }
 

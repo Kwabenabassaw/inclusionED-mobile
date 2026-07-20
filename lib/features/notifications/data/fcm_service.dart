@@ -43,13 +43,25 @@ class FcmService {
     const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
     
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (response.payload != null) {
           _handleRouting(response.payload!);
         }
       },
     );
+
+    // Explicitly create the Android notification channel
+    final androidImplementation = _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImplementation != null) {
+      await androidImplementation.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'inclusioned_main_channel',
+          'Important Notifications',
+          importance: Importance.max,
+        ),
+      );
+    }
 
     // 3. Get FCM token
     try {
@@ -139,11 +151,13 @@ class FcmService {
 
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
+    final safeId = notification.hashCode.abs() % 100000;
+
     await _localNotifications.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      details,
+      id: safeId,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: details,
       payload: payload,
     );
   }

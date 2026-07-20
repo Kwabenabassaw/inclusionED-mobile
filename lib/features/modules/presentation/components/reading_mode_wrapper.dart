@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:opencampus_lms/core/enums/playback_state.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
-import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
 import 'package:opencampus_lms/features/modules/presentation/components/playback_controller.dart';
 import 'package:opencampus_lms/features/modules/presentation/providers/readable_text_provider.dart';
 
@@ -14,7 +13,6 @@ class ReadingModeWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playback = ref.watch(playbackControllerProvider);
-    final accessSettings = ref.watch(accessibilityProvider);
     final textToRead = ref.watch(currentReadableTextProvider);
     final theme = Theme.of(context);
 

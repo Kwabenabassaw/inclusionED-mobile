@@ -14,7 +14,7 @@ import 'package:opencampus_lms/core/services/voice/voice_command_state.dart';
 /// [ref]     — the [WidgetRef] from the parent ConsumerWidget.
 Future<void> showVoiceCommandOverlay(
   BuildContext context,
-  WidgetRef ref,
+  dynamic ref,
 ) async {
   final controller = ref.read(voiceOverlayControllerProvider.notifier);
 

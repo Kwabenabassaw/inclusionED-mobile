@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as admin from "npm:firebase-admin@12.1.0";
+import admin from "npm:firebase-admin@12.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,19 +27,45 @@ serve(async (req) => {
       if (!serviceAccountJson) {
         throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
       }
-      const serviceAccount = JSON.parse(serviceAccountJson);
+      let str = serviceAccountJson.trim();
+      // Remove wrapping quotes if they exist
+      if (str.startsWith('"') && str.endsWith('"')) {
+        str = str.slice(1, -1);
+      }
+      if (str.startsWith("'") && str.endsWith("'")) {
+        str = str.slice(1, -1);
+      }
+
+      let serviceAccount;
+      try {
+        if (!str.startsWith('{')) {
+          // Remove whitespace and fix base64url padding
+          let cleanBase64 = str.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+          while (cleanBase64.length % 4) {
+            cleanBase64 += '=';
+          }
+          str = atob(cleanBase64);
+        }
+        serviceAccount = JSON.parse(str);
+      } catch (e) {
+        throw new Error(`Parse failed. First 20 chars: ${str.substring(0, 20)}... Error: ${e.message}`);
+      }
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
     }
 
     const firestore = admin.firestore();
+    // Fix for Deno Deploy "14 UNAVAILABLE" gRPC connection drop:
+    firestore.settings({ preferRest: true });
+    
     const messaging = admin.messaging();
 
     // 1. Get all enrollments for this course
     const enrollmentsSnapshot = await firestore
       .collection('enrollments')
       .where('courseId', '==', courseId)
+      .where('status', '==', 'ACTIVE')
       .get();
       
     const studentIds = new Set<string>();
@@ -55,7 +81,24 @@ serve(async (req) => {
       });
     }
 
-    // 2. Fetch FCM tokens for these students
+    // 2. Fetch User Preferences and filter studentIds
+    const usersSnapshot = await firestore.collection('users').get();
+    const userPrefs = new Map<string, any>();
+    usersSnapshot.docs.forEach((doc: any) => {
+      userPrefs.set(doc.id, doc.data()?.notificationPreferences || {});
+    });
+
+    studentIds.forEach((uid) => {
+      const prefs = userPrefs.get(uid);
+      const wantsCourseUpdates = prefs?.courseUpdates !== false;
+      const wantsNewMaterials = prefs?.newMaterials !== false;
+      
+      if (!wantsCourseUpdates || !wantsNewMaterials) {
+        studentIds.delete(uid); // Remove from in-app notifications and FCM
+      }
+    });
+
+    // 3. Fetch FCM tokens for the remaining students
     const tokensSnapshot = await firestore.collection('fcmTokens').get();
     const fcmTokens: string[] = [];
 

@@ -7,7 +7,6 @@ import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
 import 'package:opencampus_lms/shared/models/user_profile.dart';
 import 'package:opencampus_lms/features/accessibility/data/accessibility_provider.dart';
-import 'package:opencampus_lms/features/accessibility/presentation/screen_reader_wrapper.dart';
 
 import 'package:opencampus_lms/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
@@ -574,11 +573,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             theme: theme,
             children: [
               _buildInteractiveTile(
-                leading: Icons.notifications_outlined,
-                title: 'Notification Preferences',
-                subtitle: 'Manage sound and alert settings',
+                leading: Icons.app_settings_alt_outlined,
+                title: 'System Notification Access',
+                subtitle: 'Manage device-level app permissions',
                 theme: theme,
                 onTap: () => AppSettings.openAppSettings(type: AppSettingsType.notification),
+              ),
+              _buildInteractiveTile(
+                leading: Icons.notifications_active_outlined,
+                title: 'In-App Notifications',
+                subtitle: 'Manage which alerts you receive',
+                theme: theme,
+                onTap: () => context.push('/profile/notification-settings'),
               ),
               _buildInteractiveTile(
                 leading: Icons.fingerprint_rounded,

@@ -57,10 +57,22 @@ class CommandInterpreter {
     Intent('selectOption', ['select option', 'choose option', 'select', 'choose']),
     Intent('submitQuiz', ['submit quiz', 'finish assessment', 'submit answers', 'finish quiz']),
     Intent('downloadCourse', ['download this course', 'make course offline', 'save for offline', 'download course']),
+    Intent('whereAmI', ['where am i', 'what screen am i on', 'current screen']),
+    Intent('whatCanISay', ['what can i say', 'what can i do here', 'available commands']),
+    Intent('skipForward', ['skip forward', 'fast forward', 'skip ahead', 'go forward']),
+    Intent('skipBackward', ['skip backward', 'rewind', 'go back 15 seconds', 'rewind 15 seconds']),
+    Intent('muteAudio', ['mute audio', 'mute', 'turn off sound']),
+    Intent('toggleCaptions', ['turn on captions', 'turn off captions', 'toggle captions', 'subtitles']),
+    Intent('resumeLastCourse', ['resume my last course', 'open my last course', 'resume course', 'pick up where i left off']),
+    Intent('explainSimply', ['explain simply', 'explain like i am five', 'make it simpler', 'simplify this']),
+    Intent('translate', ['translate this', 'translate to', 'read in another language']),
+    Intent('createStudyPlan', ['create a study plan', 'make a study schedule', 'plan my study']),
+    Intent('readOptions', ['read options', 'what are the options', 'read answers']),
+    Intent('whatDidIChoose', ['what did i choose', 'what is my answer', 'read my selection']),
   ];
 
   /// Parses the transcript using fuzzy string matching and normalizes numbers.
-  Map<String, dynamic>? parse(String transcript) {
+  Map<String, dynamic>? parse(String transcript, {String? pendingAction}) {
     if (transcript.isEmpty) return null;
 
     // 1. Normalize string: lowercase, strip fillers
@@ -76,6 +88,15 @@ class CommandInterpreter {
     numberMap.forEach((word, digit) {
       normalized = normalized.replaceAll(word, digit);
     });
+
+    if (pendingAction != null && pendingAction.isNotEmpty) {
+      if (pendingAction == 'openCourse') {
+        String target = normalized.replaceAll(RegExp(r'\b(the|course|courses|class|classes)\b'), '').trim();
+        if (target.isNotEmpty) {
+          return {'action': 'openCourse', 'target': target, 'confidence': 'high'};
+        }
+      }
+    }
 
     String? matchedType;
     double bestScore = 0.0;
@@ -123,7 +144,7 @@ class CommandInterpreter {
       if (target.isNotEmpty) {
         return {'action': matchedType, 'target': target, 'confidence': 'high'};
       }
-      return {'action': 'openCourses', 'confidence': 'high'};
+      return {'action': 'openCourse', 'pending': true, 'confidence': 'high'};
     }
 
     if (matchedType == 'askAI') {

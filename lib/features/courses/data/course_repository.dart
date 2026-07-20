@@ -169,10 +169,12 @@ class CourseRepository {
       );
 
       if (response.statusCode != 200) {
-        print("Failed to log learning event: \${response.body}");
+        // ignore: avoid_print
+        print("Failed to log learning event: ${response.body}");
         _offlineSync.queueLearningEvent(body);
       }
     } catch (e) {
+      // ignore: avoid_print
       print("Error logging learning event: $e");
       final fallbackBody = {
         'enrollmentId': enrollmentId,
@@ -180,8 +182,8 @@ class CourseRepository {
         'itemId': itemId,
         'type': type,
         'status': status,
-        'timeSpentSeconds': ?timeSpentSeconds,
-        'readingPercentage': ?readingPercentage,
+        'timeSpentSeconds': timeSpentSeconds,
+        'readingPercentage': readingPercentage,
       };
       _offlineSync.queueLearningEvent(fallbackBody);
     }
@@ -194,6 +196,7 @@ class CourseRepository {
       submissionData['id'] = docRef.id;
       await docRef.set(submissionData);
     } catch (e) {
+      // ignore: avoid_print
       print("Error submitting quiz: $e");
       _offlineSync.queueQuizSubmission(submissionData);
     }
