@@ -41,7 +41,7 @@ class XpCelebrationOverlay extends StatefulWidget {
           ),
         );
       },
-      pageBuilder: (ctx, _, __) => XpCelebrationOverlay(
+      pageBuilder: (ctx, anim, secondaryAnim) => XpCelebrationOverlay(
         newLevel: newLevel,
         xpAwarded: xpAwarded,
         newBadges: newBadges,

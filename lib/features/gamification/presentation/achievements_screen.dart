@@ -56,7 +56,7 @@ class XpHudChip extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (e, st) => const SizedBox.shrink(),
     );
   }
 }
