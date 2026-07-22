@@ -144,7 +144,7 @@ class _NotesTab extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '"\${note.anchoredText!}"',
+                          '"${note.anchoredText!}"',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
                         ),
                       ),

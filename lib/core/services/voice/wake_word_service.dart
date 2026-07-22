@@ -43,7 +43,7 @@ class WakeWordService {
       _voskRecognizer = await _vosk!.createRecognizer(
         model: _voskModel!,
         sampleRate: 16000,
-        grammar: ['hey inclusion ed', 'porcupine', '[unk]'],
+        grammar: ['hey', 'inclusion', 'ed', 'opencampus', 'open', 'campus', 'lms', 'porcupine', '[unk]'],
       );
       
       _voskSpeechService = await _vosk!.initSpeechService(_voskRecognizer!);
@@ -70,14 +70,14 @@ class WakeWordService {
           debugPrint("[WakeWord] STT Error: $error");
           // Restart listening on error if we are supposed to be listening
           if (_isListening) {
-             _startSpeechToText();
+             Future.delayed(const Duration(seconds: 1), _startSpeechToText);
           }
         },
         onStatus: (status) {
           debugPrint("[WakeWord] STT Status: $status");
           // Restart if it stops automatically
           if (status == 'done' && _isListening) {
-             _startSpeechToText();
+             Future.delayed(const Duration(seconds: 1), _startSpeechToText);
           }
         },
       );
@@ -94,7 +94,11 @@ class WakeWordService {
 
   void _checkTranscript(String text) {
     final lower = text.toLowerCase();
-    if (lower.contains('hey inclusion ed') || lower.contains('porcupine')) {
+    if (lower.contains('hey inclusion ed') ||
+        lower.contains('opencampus') ||
+        lower.contains('open campus') ||
+        lower.contains('lms') ||
+        lower.contains('porcupine')) {
       debugPrint("[WakeWord] Wake word detected!");
       _onWakeWordDetected?.call();
       

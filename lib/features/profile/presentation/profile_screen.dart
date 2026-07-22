@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:opencampus_lms/features/gamification/data/gamification_repository.dart';
+import 'package:opencampus_lms/shared/models/user_gamification.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/authentication/data/auth_repository.dart';
@@ -11,6 +13,7 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 import 'package:opencampus_lms/core/widgets/glass_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:opencampus_lms/features/reader/data/user_activity_repository.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -27,7 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -132,6 +135,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             children: [
                               _buildAccessibilityTab(context),
                               _buildSettingsTab(context),
+                              _buildActivityTab(context),
                             ],
                           ),
                         ),
@@ -178,16 +182,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
         ),
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 13),
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 11),
         tabs: const [
           Tab(
             height: 40,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.accessibility_new, size: 16),
-                SizedBox(width: 6),
+                Icon(Icons.accessibility_new, size: 15),
+                SizedBox(width: 2),
                 Text('Accessibility'),
               ],
             ),
@@ -197,9 +201,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.settings, size: 16),
-                SizedBox(width: 6),
+                Icon(Icons.settings, size: 15),
+                SizedBox(width: 2),
                 Text('System'),
+              ],
+            ),
+          ),
+          Tab(
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.emoji_events_outlined, size: 15),
+                SizedBox(width: 2),
+                Text('Badges & Notes'),
               ],
             ),
           ),
@@ -568,6 +583,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       child: Column(
         children: [
           _buildCategoryCard(
+            title: 'Achievements & Activity',
+            icon: Icons.emoji_events_outlined,
+            theme: theme,
+            children: [
+              _buildInteractiveTile(
+                leading: Icons.military_tech_outlined,
+                title: 'Achievements & Badges',
+                subtitle: 'View your XP, streaks, level & badges',
+                theme: theme,
+                onTap: () => context.push('/achievements'),
+              ),
+              _buildInteractiveTile(
+                leading: Icons.notes_rounded,
+                title: 'My Saved Notes',
+                subtitle: 'View all saved lesson notes & reflections',
+                theme: theme,
+                onTap: () {
+                  _tabController.animateTo(2);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildCategoryCard(
             title: 'System & Security',
             icon: Icons.shield_outlined,
             theme: theme,
@@ -746,6 +785,199 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
         subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8))) : null,
         value: value,
         onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildActivityTab(BuildContext context) {
+    final theme = Theme.of(context);
+    final statsAsync = ref.watch(gamificationStreamProvider);
+    final notesAsync = ref.watch(allUserNotesProvider);
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Gamification / Achievements Card
+          _buildCategoryCard(
+            title: 'Achievements & Badges',
+            icon: Icons.emoji_events_rounded,
+            theme: theme,
+            children: [
+              statsAsync.when(
+                data: (stats) {
+                  if (stats == null) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Start learning lessons to earn XP and unlock badges!'),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.star_rounded, color: theme.colorScheme.primary, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Level ${stats.level} Scholar',
+                                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${stats.totalXp} Total XP • ${stats.currentStreak} Day Streak 🔥',
+                                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FilledButton.tonal(
+                              onPressed: () => context.push('/achievements'),
+                              child: const Text('View All'),
+                            ),
+                          ],
+                        ),
+                        if (stats.earnedBadgeIds.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Text('Unlocked Badges (${stats.earnedBadgeIds.length})', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: stats.earnedBadgeIds.map((badgeStr) {
+                              final badgeId = BadgeId.values.firstWhere(
+                                (b) => b.name == badgeStr,
+                                orElse: () => BadgeId.firstLesson,
+                              );
+                              final def = kBadgeDefinitions[badgeId];
+                              if (def == null) return const SizedBox.shrink();
+                              return Chip(
+                                avatar: Text(def.icon, style: const TextStyle(fontSize: 16)),
+                                label: Text(def.name, style: const TextStyle(fontSize: 12)),
+                                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Error loading stats: $e'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // All Saved Notes Section
+          _buildCategoryCard(
+            title: 'My Saved Notes',
+            icon: Icons.notes_rounded,
+            theme: theme,
+            children: [
+              notesAsync.when(
+                data: (notes) {
+                  if (notes.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.note_alt_outlined, size: 40, color: theme.colorScheme.outlineVariant),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No saved notes yet',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Notes you take in lessons will appear here.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(12),
+                    itemCount: notes.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final note = notes[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.description_outlined, color: theme.colorScheme.onSecondaryContainer, size: 20),
+                        ),
+                        title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (note.anchoredText != null)
+                              Text(
+                                '"${note.anchoredText!}"',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontStyle: FontStyle.italic, color: theme.colorScheme.primary, fontSize: 12),
+                              ),
+                            Text(
+                              note.content,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          onPressed: () {
+                            ref.read(userActivityRepositoryProvider).deleteNote(note.id);
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Error loading notes: $e'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

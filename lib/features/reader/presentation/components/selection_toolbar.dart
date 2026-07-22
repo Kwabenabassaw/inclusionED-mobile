@@ -3,34 +3,52 @@ import 'package:flutter/material.dart';
 class SelectionToolbar {
   static Widget buildContextMenu({
     required BuildContext context,
-    required SelectableRegionState selectableRegionState,
-    required String selectedText,
-    required VoidCallback onHighlight,
-    required VoidCallback onAddNote,
-    required VoidCallback onAskAi,
+    required EditableTextState editableTextState,
+    required void Function(String selectedText, int occurrenceIndex) onHighlight,
+    required void Function(String selectedText) onAddNote,
+    required void Function(String selectedText) onAskAi,
   }) {
-    // Obtain the endpoints of the selection to position the toolbar
-    final selectionAnchors = selectableRegionState.contextMenuAnchors;
+    final selectionAnchors = editableTextState.contextMenuAnchors;
+    final textEditingValue = editableTextState.textEditingValue;
+    final selectedText = textEditingValue.selection.textInside(textEditingValue.text);
+
+    if (selectedText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Calculate the occurrence index of the selected text
+    final plainText = textEditingValue.text;
+    final selectionStart = textEditingValue.selection.start;
+
+    int occurrenceIndex = 0;
+    int searchIndex = 0;
+    while (true) {
+      final found = plainText.indexOf(selectedText, searchIndex);
+      if (found == -1 || found >= selectionStart) break;
+      occurrenceIndex++;
+      searchIndex = found + selectedText.length;
+    }
+
     final buttonItems = [
       ContextMenuButtonItem(
         label: 'Highlight',
         onPressed: () {
-          selectableRegionState.hideToolbar();
-          onHighlight();
+          editableTextState.hideToolbar();
+          onHighlight(selectedText, occurrenceIndex);
         },
       ),
       ContextMenuButtonItem(
         label: 'Note',
         onPressed: () {
-          selectableRegionState.hideToolbar();
-          onAddNote();
+          editableTextState.hideToolbar();
+          onAddNote(selectedText);
         },
       ),
       ContextMenuButtonItem(
         label: 'Ask AI',
         onPressed: () {
-          selectableRegionState.hideToolbar();
-          onAskAi();
+          editableTextState.hideToolbar();
+          onAskAi(selectedText);
         },
       ),
     ];

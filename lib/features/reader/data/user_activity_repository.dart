@@ -13,6 +13,10 @@ final userActivityRepositoryProvider = Provider<UserActivityRepository>((ref) {
   return UserActivityRepository(firestore, authRepository, offlineSync);
 });
 
+final allUserNotesProvider = StreamProvider<List<UserNote>>((ref) {
+  return ref.watch(userActivityRepositoryProvider).watchAllNotes();
+});
+
 class UserActivityRepository {
   final FirebaseFirestore _firestore;
   final AuthRepository _authRepository;
@@ -79,6 +83,20 @@ class UserActivityRepository {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) => UserNote.fromJson(doc.data())).toList();
+    });
+  }
+
+  Stream<List<UserNote>> watchAllNotes() {
+    if (_userId == null) return Stream.value([]);
+    return _firestore
+        .collection('user_activity')
+        .doc(_userId)
+        .collection('notes')
+        .snapshots()
+        .map((snapshot) {
+      final notes = snapshot.docs.map((doc) => UserNote.fromJson(doc.data())).toList();
+      notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return notes;
     });
   }
 

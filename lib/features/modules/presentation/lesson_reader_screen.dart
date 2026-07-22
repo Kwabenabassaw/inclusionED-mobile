@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:opencampus_lms/core/theme/app_dimensions.dart';
 import 'package:opencampus_lms/features/modules/data/module_repository.dart';
@@ -86,13 +87,40 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
           final highlightsAsync = ref.watch(userHighlightsProvider(widget.moduleId));
           if (highlightsAsync.hasValue) {
             final highlights = highlightsAsync.value!;
+            
+            // 1. Map each highlight to its absolute range in the original markdownText
+            List<Map<String, dynamic>> replacements = [];
             for (var highlight in highlights) {
-              // Wrap the original highlighted string in our custom ==syntax==
-              // We only want to replace the first occurrence that matches exactly, or use the startIndex/endIndex
-              // For simplicity, we just replace the text
-              markdownText = markdownText.replaceAll(
-                highlight.text,
-                '==\${highlight.text}::\${highlight.colorHex}=='
+              int currentIndex = 0;
+              int searchStart = 0;
+              int foundIndex = -1;
+              
+              while (currentIndex <= highlight.startIndex) {
+                foundIndex = markdownText.indexOf(highlight.text, searchStart);
+                if (foundIndex == -1) break;
+                searchStart = foundIndex + highlight.text.length;
+                currentIndex++;
+              }
+              
+              if (foundIndex != -1) {
+                replacements.add({
+                  'start': foundIndex,
+                  'end': foundIndex + highlight.text.length,
+                  'text': highlight.text,
+                  'color': highlight.colorHex,
+                });
+              }
+            }
+
+            // 2. Sort replacements by start index descending!
+            replacements.sort((a, b) => (b['start'] as int).compareTo(a['start'] as int));
+
+            // 3. Apply replacements from back to front
+            for (var rep in replacements) {
+              markdownText = markdownText.replaceRange(
+                rep['start'] as int,
+                rep['end'] as int,
+                "==${rep['text']}::${rep['color']}=="
               );
             }
           }
@@ -100,32 +128,49 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
           return Column(
             children: [
               Expanded(
-                child: SelectionArea(
-                  contextMenuBuilder: (BuildContext context, SelectableRegionState selectableRegionState) {
-                    // ignore: deprecated_member_use
-                    final selectedText = selectableRegionState.textEditingValue.selection.textInside(selectableRegionState.textEditingValue.text);
+                child: Markdown(
+                  data: markdownText,
+                  padding: const EdgeInsets.all(AppDimensions.marginPage),
+                  selectable: true,
+                  extensionSet: md.ExtensionSet(
+                    md.ExtensionSet.gitHubFlavored.blockSyntaxes,
+                    [
+                      ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
+                      HighlightSyntax(),
+                    ],
+                  ),
+                  builders: {
+                    'highlight': HighlightBuilder(),
+                  },
+                  styleSheet: MarkdownStyleSheet(
+                    h1: Theme.of(context).textTheme.displayLarge,
+                    h2: Theme.of(context).textTheme.displayMedium,
+                    p: Theme.of(context).textTheme.bodyLarge,
+                    listBullet: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  contextMenuBuilder: (BuildContext menuContext, EditableTextState editableTextState) {
                     return SelectionToolbar.buildContextMenu(
-                      context: context,
-                      selectableRegionState: selectableRegionState,
-                      selectedText: selectedText,
-                      onHighlight: () async {
-                        // Generate a random color or pick from a palette
+                      context: menuContext,
+                      editableTextState: editableTextState,
+                      onHighlight: (selectedText, occurrenceIndex) async {
+                        if (selectedText.isEmpty) return;
+                        // Generate a random color from palette
                         final colors = ['#FFFF00', '#00FF00', '#00FFFF', '#FF00FF'];
                         final randomColor = colors[Random().nextInt(colors.length)];
-                        
+
                         final highlight = UserHighlight(
                           id: const Uuid().v4(),
                           lessonId: widget.moduleId,
                           courseId: widget.courseId,
                           text: selectedText,
-                          startIndex: 0, // In a real app we'd map this to the exact span offset
-                          endIndex: selectedText.length,
+                          startIndex: occurrenceIndex,
+                          endIndex: occurrenceIndex,
                           colorHex: randomColor,
                           createdAt: DateTime.now(),
                         );
-                        
+
                         await ref.read(userActivityRepositoryProvider).saveHighlight(highlight);
-                        
+
                         // Award XP
                         try {
                           final result = await ref.read(gamificationRepositoryProvider).awardXp(
@@ -165,7 +210,7 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
                           }
                         }
                       },
-                      onAddNote: () {
+                      onAddNote: (selectedText) {
                         AddNoteBottomSheet.show(
                           context: context,
                           moduleId: widget.moduleId,
@@ -173,36 +218,12 @@ class _LessonReaderScreenState extends ConsumerState<LessonReaderScreen> {
                           anchoredText: selectedText,
                         );
                       },
-                      onAskAi: () {
-                        // TODO: Route to AI Companion with context
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Asking AI about: "\$selectedText"'),
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.only(bottom: 120, left: 16, right: 16),
-                        ));
+                      onAskAi: (selectedText) {
+                        final encodedPrompt = Uri.encodeComponent('Can you explain this concept to me: "$selectedText"');
+                        context.push('/assistant?courseId=${widget.courseId}&initialPrompt=$encodedPrompt');
                       },
                     );
                   },
-                  child: Markdown(
-                    data: markdownText,
-                    padding: const EdgeInsets.all(AppDimensions.marginPage),
-                    extensionSet: md.ExtensionSet(
-                      md.ExtensionSet.gitHubFlavored.blockSyntaxes,
-                      [
-                        ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
-                        HighlightSyntax(),
-                      ],
-                    ),
-                    builders: {
-                      'highlight': HighlightBuilder(),
-                    },
-                    styleSheet: MarkdownStyleSheet(
-                      h1: Theme.of(context).textTheme.displayLarge,
-                      h2: Theme.of(context).textTheme.displayMedium,
-                      p: Theme.of(context).textTheme.bodyLarge,
-                      listBullet: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ),
                 ),
               ),
               AudioToolbar(

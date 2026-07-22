@@ -6,6 +6,9 @@ import 'package:opencampus_lms/features/accessibility/data/accessibility_provide
 
 import 'package:opencampus_lms/core/routing/app_router.dart';
 import 'package:opencampus_lms/core/widgets/voice_command_overlay.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:opencampus_lms/core/providers/voice_overlay_controller.dart';
+import 'package:opencampus_lms/core/services/voice/voice_command_state.dart';
 
 final wakeWordControllerProvider = Provider<WakeWordController>((ref) {
   final controller = WakeWordController(ref);
@@ -34,9 +37,30 @@ class WakeWordController {
       },
       fireImmediately: true, // Check initial state
     );
+
+    // Watch for the voice overlay returning to idle state so we can restart
+    // the wake word listener (it stops itself to prevent overlap).
+    ref.listen<VoiceOverlayData>(
+      voiceOverlayControllerProvider,
+      (previous, current) {
+        if (previous?.state != VoiceCommandState.idle &&
+            current.state == VoiceCommandState.idle) {
+          final isEnabled = ref.read(accessibilityProvider).continuousListening;
+          if (isEnabled) {
+            _startListening();
+          }
+        }
+      },
+    );
   }
 
   Future<void> _startListening() async {
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      debugPrint("[WakeWordController] Microphone permission denied. Cannot start listening.");
+      return;
+    }
+
     final service = ref.read(wakeWordServiceProvider);
     
     if (!_isInitialized) {

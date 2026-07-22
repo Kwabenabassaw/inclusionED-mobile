@@ -17,6 +17,10 @@ service cloud.firestore {
       allow update: if (request.auth.uid == userId && (request.resource.data.role == resource.data.role || isAuthorizedAdminEmail())) || isAdmin();
       allow create: if request.auth.uid == userId || isAdmin();
       allow delete: if isAdmin();
+
+      match /{document=**} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      }
     }
     match /courses/{courseId} {
       allow read: if isAuthenticated();
@@ -80,6 +84,7 @@ service cloud.firestore {
     }
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && request.auth.uid == resource.data.recipientId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.recipientId;
       allow write: if isAdmin() || isInstructor();
     }
     match /fcmTokens/{tokenId} {

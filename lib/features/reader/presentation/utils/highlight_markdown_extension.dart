@@ -28,18 +28,11 @@ class HighlightBuilder extends MarkdownElementBuilder {
     final colorHex = element.attributes['color'] ?? '#FFFF00';
     final color = HexColor.fromHex(colorHex);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(4),
-        border: Border(bottom: BorderSide(color: color, width: 2)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-      child: Text(
-        element.textContent,
-        style: preferredStyle?.copyWith(
-          color: Colors.black87,
-        ),
+    return Text(
+      element.textContent,
+      style: preferredStyle?.copyWith(
+        backgroundColor: color.withValues(alpha: 0.3),
+        color: Colors.black87,
       ),
     );
   }
